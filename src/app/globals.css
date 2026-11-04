@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #080A09;
+    --foreground: #FFFFFF;
+    --card: #151817;
+    --card-foreground: #FFFFFF;
+    --popover: #151817;
+    --popover-foreground: #FFFFFF;
+    --primary: #A3FF00;
+    --primary-foreground: #080A09;
+    --secondary: #1F2422;
+    --secondary-foreground: #FFFFFF;
+    --muted: #1F2422;
+    --muted-foreground: #A0A6A2;
+    --accent: #A3FF00;
+    --accent-foreground: #080A09;
+    --destructive: #FF334B;
+    --destructive-foreground: #FFFFFF;
+    --border: #292E2B;
+    --input: #1F2422;
+    --ring: #A3FF00;
+    --radius: 0.5rem;
+  }
+}
+
+body {
+  background-color: #080A09;
+  color: #FFFFFF;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #080A09;
+}
+::-webkit-scrollbar-thumb {
+  background: #292E2B;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A3FF00;
+}
+
+/* Athletic Grid & Slanted Accents */
+.athletic-grid {
+  background-image: linear-gradient(to right, #151817 1px, transparent 1px),
+    linear-gradient(to bottom, #151817 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.athletic-glow {
+  box-shadow: 0 0 25px -5px rgba(163, 255, 0, 0.25);
+}
+
+.athletic-glow-strong {
+  box-shadow: 0 0 40px -5px rgba(163, 255, 0, 0.45);
+}
+
+.slant-edge {
+  clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
+}

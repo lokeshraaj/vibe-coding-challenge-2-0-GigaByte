@@ -1,0 +1,213 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { DashboardShell } from "@/components/shared/dashboard-shell";
+import { MetricCard } from "@/components/shared/metric-card";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Users, CalendarCheck, Trophy, Award, Plus, ArrowRight } from "lucide-react";
+
+interface CoachStats {
+  assignedPlayersCount: number;
+  readyCount: number;
+  notReadyCount: number;
+  recentSessions: Array<{
+    id: string;
+    sport: string;
+    date: string;
+    title: string;
+    status: string;
+  }>;
+  recentMatches: Array<{
+    id: string;
+    sport: string;
+    opponentName: string;
+    result: string;
+    date: string;
+    score: string;
+  }>;
+}
+
+export default function CoachDashboardPage() {
+  const [stats, setStats] = useState<CoachStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/dashboard/stats");
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data.stats);
+        }
+      } catch (e) {
+        console.error("Failed to load coach stats:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  return (
+    <DashboardShell allowedRoles={["COACH"]}>
+      <div className="space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black italic tracking-tight uppercase text-white">
+              COACH DESK & SQUAD COMMAND
+            </h1>
+            <p className="text-xs text-athletic-textMuted uppercase tracking-wider mt-1">
+              DAILY PRACTICE ATTENDANCE & MATCH OPERATIONS
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard/coach/sessions">
+              <Button variant="athletic" size="sm" className="gap-2">
+                <CalendarCheck className="h-4 w-4" />
+                <span>Practice Sessions</span>
+              </Button>
+            </Link>
+            <Link href="/dashboard/coach/matches">
+              <Button variant="secondary" size="sm" className="gap-2">
+                <Trophy className="h-4 w-4" />
+                <span>Record Match</span>
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard
+            title="Assigned Roster"
+            value={loading ? "..." : stats?.assignedPlayersCount || 0}
+            subtitle="Active athletes under your training"
+            icon={<Users className="h-5 w-5" />}
+          />
+          <MetricCard
+            title="Trial Ready Athletes"
+            value={loading ? "..." : stats?.readyCount || 0}
+            subtitle="&ge; 75% attendance + &ge; 2 matches"
+            icon={<Award className="h-5 w-5" />}
+            highlight={true}
+          />
+          <MetricCard
+            title="Developing Athletes"
+            value={loading ? "..." : stats?.notReadyCount || 0}
+            subtitle="Working towards trial eligibility"
+            icon={<Users className="h-5 w-5" />}
+          />
+          <MetricCard
+            title="Matches Recorded"
+            value={loading ? "..." : stats?.recentMatches?.length || 0}
+            subtitle="Verified competitive records"
+            icon={<Trophy className="h-5 w-5" />}
+          />
+        </div>
+
+        {/* Recent Practice & Matches */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Practice Sessions */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <CardTitle className="text-base flex items-center gap-2">
+                <CalendarCheck className="h-5 w-5 text-athletic-lime" />
+                <span>Recent Practice Sessions</span>
+              </CardTitle>
+              <Link
+                href="/dashboard/coach/sessions"
+                className="text-xs font-bold text-athletic-lime hover:underline flex items-center gap-1 uppercase"
+              >
+                <span>View All</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="py-8 text-center text-xs text-athletic-textMuted">Loading...</div>
+              ) : stats?.recentSessions && stats.recentSessions.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.recentSessions.map((s) => (
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between p-3.5 rounded-lg bg-athletic-black border border-athletic-border/70"
+                    >
+                      <div>
+                        <div className="text-sm font-bold text-white">{s.title || "Practice Session"}</div>
+                        <div className="text-[11px] text-athletic-textMuted">
+                          {new Date(s.date).toLocaleDateString()} • {s.sport}
+                        </div>
+                      </div>
+                      <StatusBadge status={s.status} type="session" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-xs text-athletic-textMuted space-y-3">
+                  <p>No practice sessions recorded yet.</p>
+                  <Link href="/dashboard/coach/sessions">
+                    <Button variant="athletic" size="sm">
+                      Create Practice Session
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Matches */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-athletic-lime" />
+                <span>Recent Match Records</span>
+              </CardTitle>
+              <Link
+                href="/dashboard/coach/matches"
+                className="text-xs font-bold text-athletic-lime hover:underline flex items-center gap-1 uppercase"
+              >
+                <span>View All</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="py-8 text-center text-xs text-athletic-textMuted">Loading...</div>
+              ) : stats?.recentMatches && stats.recentMatches.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.recentMatches.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center justify-between p-3.5 rounded-lg bg-athletic-black border border-athletic-border/70"
+                    >
+                      <div>
+                        <div className="text-sm font-bold text-white">vs {m.opponentName}</div>
+                        <div className="text-[11px] text-athletic-textMuted">
+                          {new Date(m.date).toLocaleDateString()} • Score: {m.score}
+                        </div>
+                      </div>
+                      <StatusBadge status={m.result} type="match" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-xs text-athletic-textMuted space-y-3">
+                  <p>No matches recorded yet.</p>
+                  <Link href="/dashboard/coach/matches">
+                    <Button variant="secondary" size="sm">
+                      Record Match Performance
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </DashboardShell>
+  );
+}
