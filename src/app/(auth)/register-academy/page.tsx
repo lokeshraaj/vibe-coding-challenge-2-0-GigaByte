@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Zap, Building2, ArrowRight } from "lucide-react";
+import { Building2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -60,19 +60,13 @@ export default function RegisterAcademyPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#F4F3EE] px-4 py-12">
-      {/* Brand Header */}
-      <Link href="/" className="mb-8 flex items-center gap-3 group">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#C6F432] text-[#101820] shadow-sm">
-          <Zap className="h-6 w-6 fill-[#101820]" />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-2xl font-black italic tracking-tight text-[#101820] uppercase">
-            ATHLIX
-          </span>
-          <span className="text-[10px] font-bold tracking-widest text-[#8B969E] uppercase -mt-1">
-            ENTERPRISE ACADEMY ONBOARDING
-          </span>
-        </div>
+      {/* Official Brand Header */}
+      <Link href="/" className="mb-6 flex flex-col items-center group">
+        <img
+          src="/images/logo-stacked.png"
+          alt="ATHLIX"
+          className="h-16 w-auto object-contain group-hover:scale-102 transition-transform"
+        />
       </Link>
 
       <Card className="w-full max-w-2xl border-[#DCE1E3] bg-white shadow-sm">

@@ -81,62 +81,28 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Right Column: Clean Athlete Performance Card */}
-              <div className="lg:col-span-5">
-                <div className="relative mx-auto max-w-md rounded-2xl border border-[#DCE1E3] bg-white p-6 shadow-sm">
-                  {/* Top Header */}
-                  <div className="flex items-center justify-between pb-5 border-b border-[#DCE1E3]">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#C6F432] ring-4 ring-[#C6F432]/30" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#101820]">
-                        Verified Talent Radar
+              {/* Right Column: Dynamic Athletes Visual in place of Live Metric Engine */}
+              <div className="lg:col-span-5 relative">
+                <div className="relative mx-auto max-w-lg lg:max-w-none">
+                  <div className="relative overflow-hidden rounded-2xl border border-[#DCE1E3] bg-white p-4 shadow-sm">
+                    <img
+                      src="/images/hero-athletes.png"
+                      alt="ATHLIX Multi-Sport Athletes in Motion"
+                      className="w-full h-auto object-contain rounded-xl select-none"
+                    />
+
+                    {/* Floating Pro Radar Active Badge */}
+                    <div className="mt-4 p-3.5 rounded-xl bg-[#F4F3EE] border border-[#DCE1E3] flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-2.5 w-2.5 rounded-full bg-[#C6F432] ring-4 ring-[#C6F432]/40" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#101820]">
+                          Pro Scouting Radar Active
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#8B969E] uppercase tracking-wider">
+                        Multi-Discipline
                       </span>
                     </div>
-                    <span className="text-[11px] font-medium text-[#8B969E] uppercase tracking-wider">
-                      Live Metric Engine
-                    </span>
-                  </div>
-
-                  {/* Athlete Mock Card Body */}
-                  <div className="py-5 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-[11px] font-medium uppercase tracking-wider text-[#8B969E]">
-                          Player Identification
-                        </div>
-                        <div className="text-base font-bold text-[#101820]">Marcus Vance</div>
-                        <div className="text-xs text-[#8B969E]">Forward • Under-19 Squad</div>
-                      </div>
-                      <div className="px-2.5 py-1 rounded-md bg-[#C6F432] text-[#101820] text-[11px] font-bold uppercase tracking-wider shadow-sm">
-                        Trial Eligible
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl bg-[#F4F3EE] p-4 space-y-3 border border-[#DCE1E3]">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-[#202A32] font-semibold">Attendance Record</span>
-                        <span className="text-[#101820] font-bold">88.5% (Threshold &ge;75%)</span>
-                      </div>
-                      <div className="w-full bg-[#DCE1E3] h-2 rounded-full overflow-hidden">
-                        <div className="bg-[#101820] h-full w-[88.5%] rounded-full" />
-                      </div>
-
-                      <div className="flex justify-between items-center text-xs pt-1">
-                        <span className="text-[#202A32] font-semibold">Competitive Matches</span>
-                        <span className="text-[#101820] font-bold">4 Matches (Min &ge;2)</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs text-[#202A32] font-medium bg-[#F4F3EE]/60 p-3 rounded-lg border border-[#DCE1E3]">
-                      <CheckCircle2 className="h-4 w-4 text-[#101820] shrink-0" />
-                      <span>Tamper-proof practice sessions & verified rosters</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 text-center border-t border-[#DCE1E3]">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
-                      Automated Mathematical Evaluation Engine
-                    </span>
                   </div>
                 </div>
               </div>

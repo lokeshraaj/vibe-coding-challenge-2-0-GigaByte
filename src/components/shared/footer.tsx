@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Zap, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 export function Footer() {
   return (
@@ -8,14 +8,13 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
           {/* Brand info */}
           <div className="space-y-3 md:col-span-1">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#C6F432] text-[#101820] font-black">
-                <Zap className="h-4 w-4 stroke-[3]" />
-              </div>
-              <span className="text-lg font-black italic tracking-tight text-[#101820] uppercase">
-                ATHLIX
-              </span>
-            </div>
+            <Link href="/" className="inline-block">
+              <img
+                src="/images/logo.png"
+                alt="ATHLIX"
+                className="h-7 w-auto object-contain"
+              />
+            </Link>
             <p className="text-xs text-[#8B969E] leading-relaxed">
               The minimalist multi-tenant operating system for sports academies, coaching rosters, and pro talent discovery networks.
             </p>

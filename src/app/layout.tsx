@@ -3,11 +3,12 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ATHLIX — Multi-Tenant Sports Academy Management & Scouting Platform",
+  title: "ATHLIX — Sports Academy Operating System & Talent Radar",
   description:
     "Production-ready multi-tenant SaaS for independent sports academies, coach management, practice attendance locking, match performance tracking, and automated talent trial scouting.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/images/app-icon.png",
+    apple: "/images/app-icon.png",
   },
 };
 
@@ -17,17 +18,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-athletic-black text-white min-h-screen antialiased font-sans selection:bg-athletic-lime selection:text-athletic-black">
+    <html lang="en">
+      <body className="bg-[#F4F3EE] text-[#101820] min-h-screen antialiased font-sans selection:bg-[#C6F432] selection:text-[#101820]">
         {children}
         <Toaster
           position="top-right"
-          theme="dark"
+          theme="light"
           toastOptions={{
             style: {
-              background: "#151817",
-              border: "1px solid #292E2B",
-              color: "#FFFFFF",
+              background: "#FFFFFF",
+              border: "1px solid #DCE1E3",
+              color: "#101820",
             },
           }}
         />

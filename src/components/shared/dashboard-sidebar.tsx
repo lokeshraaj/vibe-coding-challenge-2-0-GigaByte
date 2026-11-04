@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Zap,
   LayoutDashboard,
   Users,
   Trophy,
@@ -83,15 +82,20 @@ export function DashboardSidebar({ role, academyName }: SidebarProps) {
       {/* Brand Header */}
       <div className="flex h-18 items-center justify-between px-4 border-b border-[#DCE1E3]">
         <Link href="/" className="flex items-center gap-2.5 overflow-hidden">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#C6F432] text-[#101820] font-black italic shadow-xs">
-            <Zap className="h-5 w-5 stroke-[2.5]" />
-          </div>
-          {!collapsed && (
+          {collapsed ? (
+            <img
+              src="/images/logo-icon.png"
+              alt="ATHLIX"
+              className="h-7 w-auto object-contain mx-auto"
+            />
+          ) : (
             <div className="flex flex-col">
-              <span className="text-lg font-black italic tracking-tight text-[#101820] uppercase">
-                ATHLIX
-              </span>
-              <span className="text-[9px] font-bold tracking-widest text-[#8B969E] uppercase -mt-1 truncate max-w-[140px]">
+              <img
+                src="/images/logo.png"
+                alt="ATHLIX"
+                className="h-6 w-auto object-contain object-left"
+              />
+              <span className="text-[9px] font-bold tracking-widest text-[#8B969E] uppercase mt-1 truncate max-w-[150px]">
                 {academyName || "SPORTS PLATFORM"}
               </span>
             </div>
