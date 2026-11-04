@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Search, Award, ShieldCheck, Filter, UserCheck, Eye } from "lucide-react";
+import { Search, Award, ShieldCheck, Filter, UserCheck } from "lucide-react";
 import { IEligibilityCalculation } from "@/types";
 import { toast } from "sonner";
 
@@ -61,22 +61,22 @@ export default function ScoutDashboardPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black italic tracking-tight uppercase text-white">
-              TALENT SCOUT RADAR
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+              Talent Scout Radar
             </h1>
-            <p className="text-xs text-athletic-textMuted uppercase tracking-wider mt-1">
-              EXCLUSIVE VERIFIED TRIAL-READY ATHLETES
+            <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
+              Exclusive Verified Trial-Ready Athletes
             </p>
           </div>
 
           {assignedCoach && (
-            <div className="flex items-center gap-3 bg-athletic-charcoal px-4 py-2 rounded-lg border border-athletic-border">
-              <UserCheck className="h-4 w-4 text-athletic-lime" />
+            <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-[#DCE1E3] shadow-sm">
+              <UserCheck className="h-4 w-4 text-[#101820]" />
               <div className="text-xs">
-                <span className="text-[10px] text-athletic-textMuted uppercase font-bold block">
+                <span className="text-[10px] text-[#8B969E] uppercase font-bold block">
                   Assigned Coaching Desk
                 </span>
-                <span className="font-bold text-white">
+                <span className="font-bold text-[#101820]">
                   Coach {assignedCoach.name} ({assignedCoach.sport})
                 </span>
               </div>
@@ -85,41 +85,46 @@ export default function ScoutDashboardPage() {
         </div>
 
         {/* Scout Boundary Notice */}
-        <div className="p-4 rounded-lg bg-athletic-charcoal border border-athletic-border flex items-start gap-3">
-          <ShieldCheck className="h-5 w-5 text-athletic-lime shrink-0 mt-0.5" />
+        <div className="p-4 rounded-xl bg-white border border-[#DCE1E3] flex items-start gap-3 shadow-sm">
+          <ShieldCheck className="h-5 w-5 text-[#101820] shrink-0 mt-0.5" />
           <div className="text-xs space-y-1">
-            <span className="font-bold text-white uppercase tracking-wider block">
+            <span className="font-bold text-[#101820] uppercase tracking-wider block">
               Automated Scout Gate:
             </span>
-            <p className="text-athletic-textMuted leading-relaxed">
+            <p className="text-[#8B969E] leading-relaxed">
               This directory displays <strong>strictly READY players</strong> belonging to your assigned coach.
               Non-ready or developing players are logically restricted from this portal until they reach the mandatory
-              $\ge 75\%$ attendance threshold and $\ge 2$ match appearances.
+              &ge; 75% attendance threshold and &ge; 2 match appearances.
             </p>
           </div>
         </div>
 
         {/* Filter Bar */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 bg-athletic-charcoal p-4 rounded-lg border border-athletic-border">
+        <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-[#DCE1E3] shadow-sm">
           <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2 w-full">
             <Input
               placeholder="Search eligible athletes by name or position..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-athletic-black"
+              className="bg-white"
             />
-            <Button type="submit" variant="secondary" size="md" className="gap-2 shrink-0">
+            <Button
+              type="submit"
+              variant="outline"
+              size="md"
+              className="gap-2 shrink-0 border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE]"
+            >
               <Search className="h-4 w-4" />
               <span>Filter</span>
             </Button>
           </form>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Filter className="h-4 w-4 text-athletic-lime shrink-0" />
+            <Filter className="h-4 w-4 text-[#101820] shrink-0" />
             <select
               value={sportFilter}
               onChange={(e) => setSportFilter(e.target.value)}
-              className="h-11 rounded-md border border-athletic-border bg-athletic-black px-3 text-xs font-bold uppercase text-white focus-visible:outline-none focus-visible:border-athletic-lime w-full sm:w-44"
+              className="h-11 rounded-md border border-[#DCE1E3] bg-white px-3 text-xs font-bold uppercase text-[#101820] focus-visible:outline-none focus-visible:border-[#101820] w-full sm:w-44"
             >
               <option value="ALL">All Disciplines</option>
               <option value="Football">Football</option>
@@ -132,14 +137,14 @@ export default function ScoutDashboardPage() {
         {/* Eligible Players Cards Grid */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-black uppercase text-white flex items-center gap-2">
-              <Award className="h-4 w-4 text-athletic-lime" />
+            <h3 className="text-sm font-bold uppercase text-[#101820] flex items-center gap-2">
+              <Award className="h-4 w-4 text-[#101820]" />
               <span>Trial-Qualified Prospects ({eligiblePlayers.length})</span>
             </h3>
           </div>
 
           {loading ? (
-            <div className="py-16 text-center text-xs text-athletic-textMuted">
+            <div className="py-16 text-center text-xs text-[#8B969E]">
               Scanning roster for trial-ready athletes...
             </div>
           ) : eligiblePlayers.length > 0 ? (
@@ -147,15 +152,17 @@ export default function ScoutDashboardPage() {
               {eligiblePlayers.map((player) => (
                 <Card
                   key={player.playerId}
-                  className="border-athletic-border hover:border-athletic-lime/60 transition-all bg-athletic-charcoal"
+                  className="border-[#DCE1E3] hover:border-[#101820]/40 transition-all bg-white shadow-sm"
                 >
-                  <CardHeader className="pb-3 border-b border-athletic-border/70">
+                  <CardHeader className="pb-3 border-b border-[#DCE1E3]">
                     <div className="flex items-start justify-between">
                       <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-athletic-lime">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#8B969E]">
                           {player.sport} • {player.position}
                         </span>
-                        <CardTitle className="text-lg mt-0.5">{player.playerName}</CardTitle>
+                        <CardTitle className="text-lg font-bold text-[#101820] mt-0.5">
+                          {player.playerName}
+                        </CardTitle>
                       </div>
                       <StatusBadge status="READY" type="eligibility" />
                     </div>
@@ -163,32 +170,32 @@ export default function ScoutDashboardPage() {
                   <CardContent className="pt-4 space-y-4">
                     {/* Performance metrics */}
                     <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="p-2.5 rounded bg-athletic-black border border-athletic-border">
-                        <span className="text-[10px] font-bold uppercase text-athletic-textMuted block">
+                      <div className="p-3 rounded-xl bg-[#F4F3EE] border border-[#DCE1E3]">
+                        <span className="text-[10px] font-bold uppercase text-[#8B969E] block">
                           Attendance Rate
                         </span>
-                        <span className="text-lg font-black text-emerald-400">
+                        <span className="text-lg font-extrabold text-emerald-700">
                           {player.attendancePercentage}%
                         </span>
-                        <span className="text-[10px] text-athletic-textMuted block mt-0.5">
+                        <span className="text-[10px] text-[#8B969E] block mt-0.5">
                           {player.presentSessions} / {player.totalClosedSessions} sessions
                         </span>
                       </div>
 
-                      <div className="p-2.5 rounded bg-athletic-black border border-athletic-border">
-                        <span className="text-[10px] font-bold uppercase text-athletic-textMuted block">
+                      <div className="p-3 rounded-xl bg-[#F4F3EE] border border-[#DCE1E3]">
+                        <span className="text-[10px] font-bold uppercase text-[#8B969E] block">
                           Match Appearances
                         </span>
-                        <span className="text-lg font-black text-white">
+                        <span className="text-lg font-extrabold text-[#101820]">
                           {player.matchesPlayed} Matches
                         </span>
-                        <span className="text-[10px] text-athletic-lime block mt-0.5 font-bold">
+                        <span className="text-[10px] text-[#101820] block mt-0.5 font-bold">
                           {player.totalScore} Total Score
                         </span>
                       </div>
                     </div>
 
-                    <div className="text-[11px] text-emerald-400/90 font-medium bg-emerald-950/30 p-2.5 rounded border border-emerald-900/40">
+                    <div className="text-[11px] text-[#101820] font-medium bg-[#F4F3EE] p-3 rounded-lg border border-[#DCE1E3]">
                       {player.reasons[0]}
                     </div>
                   </CardContent>
@@ -196,10 +203,10 @@ export default function ScoutDashboardPage() {
               ))}
             </div>
           ) : (
-            <Card className="p-16 text-center text-xs text-athletic-textMuted border-dashed">
-              <Award className="h-12 w-12 mx-auto text-athletic-lime/40 mb-3" />
-              <h4 className="text-sm font-bold text-white uppercase">No Trial-Ready Athletes Yet</h4>
-              <p className="mt-1 max-w-sm mx-auto">
+            <Card className="p-16 text-center text-xs text-[#8B969E] border-dashed border-[#DCE1E3] bg-white shadow-sm">
+              <Award className="h-12 w-12 mx-auto text-[#101820]/40 mb-3" />
+              <h4 className="text-sm font-bold text-[#101820] uppercase">No Trial-Ready Athletes Yet</h4>
+              <p className="mt-1 max-w-sm mx-auto text-[#8B969E]">
                 No players under Coach {assignedCoach?.name || "your assigned coach"} currently meet both the 75% attendance and 2 match criteria. Check back after upcoming fixtures.
               </p>
             </Card>

@@ -4,67 +4,148 @@
 
 @layer base {
   :root {
-    --background: #080A09;
-    --foreground: #FFFFFF;
-    --card: #151817;
-    --card-foreground: #FFFFFF;
-    --popover: #151817;
-    --popover-foreground: #FFFFFF;
-    --primary: #A3FF00;
-    --primary-foreground: #080A09;
-    --secondary: #1F2422;
-    --secondary-foreground: #FFFFFF;
-    --muted: #1F2422;
-    --muted-foreground: #A0A6A2;
-    --accent: #A3FF00;
-    --accent-foreground: #080A09;
-    --destructive: #FF334B;
+    --background: #F4F3EE;
+    --foreground: #101820;
+    --card: #FFFFFF;
+    --card-foreground: #101820;
+    --popover: #FFFFFF;
+    --popover-foreground: #101820;
+    --primary: #C6F432;
+    --primary-foreground: #101820;
+    --secondary: #FFFFFF;
+    --secondary-foreground: #101820;
+    --muted: #F4F3EE;
+    --muted-foreground: #8B969E;
+    --accent: #C6F432;
+    --accent-foreground: #101820;
+    --destructive: #E53E3E;
     --destructive-foreground: #FFFFFF;
-    --border: #292E2B;
-    --input: #1F2422;
-    --ring: #A3FF00;
+    --border: #DCE1E3;
+    --input: #FFFFFF;
+    --ring: #C6F432;
     --radius: 0.5rem;
   }
 }
 
 body {
-  background-color: #080A09;
-  color: #FFFFFF;
+  background-color: #F4F3EE;
+  color: #101820;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   overflow-x: hidden;
 }
 
-/* Custom Scrollbar */
+/* Minimalist Clean Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #080A09;
+  background: #F4F3EE;
 }
 ::-webkit-scrollbar-thumb {
-  background: #292E2B;
-  border-radius: 4px;
+  background: #DCE1E3;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #A3FF00;
+  background: #8B969E;
 }
 
-/* Athletic Grid & Slanted Accents */
-.athletic-grid {
-  background-image: linear-gradient(to right, #151817 1px, transparent 1px),
-    linear-gradient(to bottom, #151817 1px, transparent 1px);
-  background-size: 40px 40px;
+/* Two-Player Football Animation Keyframes */
+@keyframes dribbleBall {
+  0% {
+    transform: translate(0px, 0px);
+  }
+  25% {
+    transform: translate(28px, -14px);
+  }
+  50% {
+    transform: translate(65px, -4px);
+  }
+  75% {
+    transform: translate(32px, 8px);
+  }
+  100% {
+    transform: translate(0px, 0px);
+  }
 }
 
-.athletic-glow {
-  box-shadow: 0 0 25px -5px rgba(163, 255, 0, 0.25);
+@keyframes player1Move {
+  0%, 100% {
+    transform: translateX(0px);
+  }
+  30% {
+    transform: translateX(18px);
+  }
+  60% {
+    transform: translateX(8px);
+  }
 }
 
-.athletic-glow-strong {
-  box-shadow: 0 0 40px -5px rgba(163, 255, 0, 0.45);
+@keyframes player2Tackle {
+  0%, 100% {
+    transform: translateX(0px);
+  }
+  35% {
+    transform: translateX(-16px);
+  }
+  65% {
+    transform: translateX(-24px);
+  }
 }
 
-.slant-edge {
-  clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
+@keyframes playerLegKick1 {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(18deg);
+  }
+  40% {
+    transform: rotate(-10deg);
+  }
+}
+
+@keyframes playerLegKick2 {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  35% {
+    transform: rotate(-22deg);
+  }
+  60% {
+    transform: rotate(5deg);
+  }
+}
+
+.anim-ball {
+  animation: dribbleBall 2.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.anim-player1 {
+  animation: player1Move 2.2s ease-in-out infinite;
+}
+
+.anim-player2 {
+  animation: player2Tackle 2.2s ease-in-out infinite;
+}
+
+.anim-leg1 {
+  transform-origin: 50% 10%;
+  animation: playerLegKick1 2.2s ease-in-out infinite;
+}
+
+.anim-leg2 {
+  transform-origin: 50% 10%;
+  animation: playerLegKick2 2.2s ease-in-out infinite;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .anim-ball,
+  .anim-player1,
+  .anim-player2,
+  .anim-leg1,
+  .anim-leg2 {
+    animation: none !important;
+  }
 }

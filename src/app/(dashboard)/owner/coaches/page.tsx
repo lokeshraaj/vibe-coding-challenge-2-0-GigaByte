@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { UserCheck, Plus, X, Search, ShieldCheck } from "lucide-react";
+import { UserCheck, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface CoachItem {
@@ -100,11 +100,11 @@ export default function CoachesManagementPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black italic tracking-tight uppercase text-white">
-              COACHING STAFF MANAGEMENT
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+              Coaching Staff Management
             </h1>
-            <p className="text-xs text-athletic-textMuted uppercase tracking-wider mt-1">
-              ROSTER MANAGEMENT & SCOUT ATTACHMENTS
+            <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
+              Roster Management & Scout Attachments
             </p>
           </div>
 
@@ -112,7 +112,7 @@ export default function CoachesManagementPage() {
             variant="athletic"
             size="sm"
             onClick={() => setIsModalOpen(true)}
-            className="gap-2"
+            className="gap-2 font-bold shadow-sm"
           >
             <Plus className="h-4 w-4" />
             <span>Add New Coach</span>
@@ -120,23 +120,23 @@ export default function CoachesManagementPage() {
         </div>
 
         {/* Coaches Table Card */}
-        <Card>
-          <CardHeader className="pb-4 border-b border-athletic-border/70">
-            <CardTitle className="text-base flex items-center gap-2">
-              <UserCheck className="h-5 w-5 text-athletic-lime" />
+        <Card className="border-[#DCE1E3] bg-white shadow-sm">
+          <CardHeader className="pb-4 border-b border-[#DCE1E3]">
+            <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
+              <UserCheck className="h-5 w-5 text-[#101820]" />
               <span>Registered Coaches ({coaches.length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
-              <div className="py-12 text-center text-xs text-athletic-textMuted">
+              <div className="py-12 text-center text-xs text-[#8B969E]">
                 Loading coaches...
               </div>
             ) : coaches.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-athletic-border/80 bg-athletic-black/50 text-[10px] uppercase font-black tracking-wider text-athletic-textMuted">
+                    <tr className="border-b border-[#DCE1E3] bg-[#F4F3EE] text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
                       <th className="p-4">Coach Name</th>
                       <th className="p-4">Sport & Spec</th>
                       <th className="p-4">Experience</th>
@@ -145,33 +145,33 @@ export default function CoachesManagementPage() {
                       <th className="p-4">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-athletic-border/50">
+                  <tbody className="divide-y divide-[#DCE1E3]">
                     {coaches.map((c) => (
-                      <tr key={c.id} className="hover:bg-athletic-elevated/40 transition-colors">
-                        <td className="p-4 font-bold text-white">
+                      <tr key={c.id} className="hover:bg-[#F4F3EE] transition-colors">
+                        <td className="p-4 font-bold text-[#101820]">
                           <div className="text-sm">{c.name}</div>
-                          <div className="text-[10px] text-athletic-textMuted font-normal">{c.email}</div>
+                          <div className="text-[10px] text-[#8B969E] font-normal">{c.email}</div>
                         </td>
                         <td className="p-4">
-                          <div className="font-bold text-white uppercase">{c.sport}</div>
-                          <div className="text-[10px] text-athletic-textMuted">
+                          <div className="font-bold text-[#101820] uppercase">{c.sport}</div>
+                          <div className="text-[10px] text-[#8B969E]">
                             {c.specialization || "Head Coach"}
                           </div>
                         </td>
-                        <td className="p-4 font-semibold text-white">
+                        <td className="p-4 font-semibold text-[#101820]">
                           {c.experienceYears} Years
                         </td>
                         <td className="p-4">
-                          <span className="font-bold text-athletic-lime">{c.playerCount}</span> Players
+                          <span className="font-bold text-[#101820]">{c.playerCount}</span> Players
                         </td>
                         <td className="p-4">
                           {c.assignedScout ? (
                             <div>
-                              <div className="font-bold text-white">{c.assignedScout.name}</div>
-                              <div className="text-[10px] text-athletic-textMuted">{c.assignedScout.email}</div>
+                              <div className="font-bold text-[#101820]">{c.assignedScout.name}</div>
+                              <div className="text-[10px] text-[#8B969E]">{c.assignedScout.email}</div>
                             </div>
                           ) : (
-                            <span className="text-[11px] text-amber-400 font-medium">Unassigned</span>
+                            <span className="text-[11px] text-amber-600 font-semibold">Unassigned</span>
                           )}
                         </td>
                         <td className="p-4">
@@ -183,7 +183,7 @@ export default function CoachesManagementPage() {
                 </table>
               </div>
             ) : (
-              <div className="py-12 text-center text-xs text-athletic-textMuted space-y-3">
+              <div className="py-12 text-center text-xs text-[#8B969E] space-y-3">
                 <p>No coaches registered yet in this academy tenant.</p>
                 <Button variant="athletic" size="sm" onClick={() => setIsModalOpen(true)}>
                   Invite First Coach
@@ -195,16 +195,16 @@ export default function CoachesManagementPage() {
 
         {/* Modal: Invite / Add Coach */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-lg border-athletic-border bg-athletic-charcoal shadow-2xl relative">
-              <div className="flex items-center justify-between p-6 border-b border-athletic-border/70">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+            <Card className="w-full max-w-lg border-[#DCE1E3] bg-white shadow-xl relative">
+              <div className="flex items-center justify-between p-6 border-b border-[#DCE1E3]">
                 <div className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5 text-athletic-lime" />
-                  <h3 className="text-lg font-black uppercase text-white">Invite Academy Coach</h3>
+                  <UserCheck className="h-5 w-5 text-[#101820]" />
+                  <h3 className="text-lg font-bold uppercase text-[#101820]">Invite Academy Coach</h3>
                 </div>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="text-athletic-textMuted hover:text-white"
+                  className="text-[#8B969E] hover:text-[#101820]"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -230,11 +230,11 @@ export default function CoachesManagementPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-athletic-textMuted">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
                       Sport Discipline *
                     </label>
                     <select
-                      className="flex h-11 w-full rounded-md border border-athletic-border bg-athletic-black px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:border-athletic-lime"
+                      className="flex h-11 w-full rounded-md border border-[#DCE1E3] bg-white px-3 py-2 text-sm text-[#101820] focus-visible:outline-none focus-visible:border-[#101820]"
                       value={formData.sport}
                       onChange={(e) => setFormData({ ...formData, sport: e.target.value })}
                     >
@@ -266,7 +266,7 @@ export default function CoachesManagementPage() {
                   onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                 />
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-athletic-border/70">
+                <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
                   <Button
                     type="button"
                     variant="ghost"

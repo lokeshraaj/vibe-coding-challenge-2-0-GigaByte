@@ -10,28 +10,28 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", isLoading = false, children, disabled, ...props }, ref) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-bold tracking-wide uppercase transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-athletic-lime disabled:pointer-events-none disabled:opacity-50 select-none";
+      "inline-flex items-center justify-center font-bold tracking-wide transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F432] disabled:pointer-events-none disabled:opacity-50 select-none rounded-md";
 
     const variantStyles = {
       primary:
-        "bg-athletic-lime text-athletic-black hover:bg-athletic-limeHover hover:shadow-[0_0_20px_rgba(163,255,0,0.4)] active:scale-[0.98]",
-      secondary:
-        "bg-athletic-charcoal text-white hover:bg-athletic-elevated border border-athletic-border active:scale-[0.98]",
-      outline:
-        "bg-transparent text-white border-2 border-athletic-lime hover:bg-athletic-lime hover:text-athletic-black active:scale-[0.98]",
-      ghost:
-        "bg-transparent text-athletic-textMuted hover:text-white hover:bg-athletic-elevated",
-      destructive:
-        "bg-athletic-danger text-white hover:bg-red-600 hover:shadow-[0_0_15px_rgba(255,51,75,0.4)] active:scale-[0.98]",
+        "bg-[#C6F432] text-[#101820] hover:bg-[#B4E61F] active:scale-[0.99] border border-transparent font-bold",
       athletic:
-        "bg-athletic-lime text-athletic-black font-black italic tracking-wider skew-x-[-8deg] hover:bg-athletic-limeHover hover:shadow-[0_0_25px_rgba(163,255,0,0.5)] active:scale-[0.98]",
+        "bg-[#C6F432] text-[#101820] hover:bg-[#B4E61F] active:scale-[0.99] border border-transparent font-extrabold uppercase tracking-wider",
+      secondary:
+        "bg-white text-[#101820] hover:bg-[#F4F3EE] border border-[#DCE1E3] shadow-sm active:scale-[0.99]",
+      outline:
+        "bg-transparent text-[#101820] border border-[#101820] hover:bg-[#101820] hover:text-white active:scale-[0.99]",
+      ghost:
+        "bg-transparent text-[#8B969E] hover:text-[#101820] hover:bg-[#F4F3EE]",
+      destructive:
+        "bg-[#E53E3E] text-white hover:bg-red-700 active:scale-[0.99]",
     };
 
     const sizeStyles = {
-      sm: "h-8 px-3 text-xs rounded-sm",
-      md: "h-11 px-6 text-sm rounded-md",
-      lg: "h-14 px-8 text-base rounded-md",
-      icon: "h-10 w-10 rounded-md",
+      sm: "h-9 px-3.5 text-xs",
+      md: "h-11 px-5 text-sm",
+      lg: "h-12 px-7 text-sm",
+      icon: "h-10 w-10",
     };
 
     return (

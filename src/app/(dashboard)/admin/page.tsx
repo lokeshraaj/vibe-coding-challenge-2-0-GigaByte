@@ -5,7 +5,7 @@ import { DashboardShell } from "@/components/shared/dashboard-shell";
 import { MetricCard } from "@/components/shared/metric-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Building2, Users, UserCheck, Trophy, ShieldAlert, Activity } from "lucide-react";
+import { Building2, Users, UserCheck, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 interface AdminStats {
@@ -53,11 +53,11 @@ export default function PlatformAdminDashboard() {
     <DashboardShell allowedRoles={["PLATFORM_ADMIN"]}>
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-black italic tracking-tight uppercase text-white">
-            PLATFORM SUPER ADMIN HQ
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+            Platform Super Admin HQ
           </h1>
-          <p className="text-xs text-athletic-textMuted uppercase tracking-wider mt-1">
-            GLOBAL TENANT TELEMETRY & SYSTEM HEALTH
+          <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
+            Global Tenant Telemetry & System Health
           </p>
         </div>
 
@@ -91,23 +91,23 @@ export default function PlatformAdminDashboard() {
         </div>
 
         {/* Recent Academies Directory */}
-        <Card>
-          <CardHeader className="pb-4 border-b border-athletic-border/70">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-athletic-lime" />
+        <Card className="border-[#DCE1E3] bg-white shadow-sm">
+          <CardHeader className="pb-4 border-b border-[#DCE1E3]">
+            <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
+              <Building2 className="h-5 w-5 text-[#101820]" />
               <span>Registered Sports Academy Tenants</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
-              <div className="py-12 text-center text-xs text-athletic-textMuted">
+              <div className="py-12 text-center text-xs text-[#8B969E]">
                 Loading tenants...
               </div>
             ) : stats?.recentAcademies && stats.recentAcademies.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-athletic-border/80 bg-athletic-black/50 text-[10px] uppercase font-black tracking-wider text-athletic-textMuted">
+                    <tr className="border-b border-[#DCE1E3] bg-[#F4F3EE] text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
                       <th className="p-4">Academy Name</th>
                       <th className="p-4">Tenant Slug</th>
                       <th className="p-4">Location</th>
@@ -116,24 +116,24 @@ export default function PlatformAdminDashboard() {
                       <th className="p-4">Tenant Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-athletic-border/50">
+                  <tbody className="divide-y divide-[#DCE1E3]">
                     {stats.recentAcademies.map((a) => (
-                      <tr key={a.id} className="hover:bg-athletic-elevated/40 transition-colors">
-                        <td className="p-4 font-bold text-white text-sm">
+                      <tr key={a.id} className="hover:bg-[#F4F3EE] transition-colors">
+                        <td className="p-4 font-bold text-[#101820] text-sm">
                           {a.name}
                         </td>
                         <td className="p-4">
-                          <code className="text-athletic-lime font-mono text-[11px] bg-athletic-black px-2 py-0.5 rounded border border-athletic-border">
+                          <code className="text-[#101820] font-mono text-[11px] bg-[#F4F3EE] px-2 py-0.5 rounded border border-[#DCE1E3]">
                             {a.slug}
                           </code>
                         </td>
-                        <td className="p-4 text-white font-medium">
+                        <td className="p-4 text-[#101820] font-medium">
                           {a.city}, {a.country}
                         </td>
-                        <td className="p-4 font-semibold text-white">
+                        <td className="p-4 font-semibold text-[#101820]">
                           {a.ownerName}
                         </td>
-                        <td className="p-4 text-athletic-textMuted">
+                        <td className="p-4 text-[#8B969E]">
                           {new Date(a.createdAt).toLocaleDateString()}
                         </td>
                         <td className="p-4">
@@ -145,7 +145,7 @@ export default function PlatformAdminDashboard() {
                 </table>
               </div>
             ) : (
-              <div className="py-12 text-center text-xs text-athletic-textMuted">
+              <div className="py-12 text-center text-xs text-[#8B969E]">
                 No academies registered yet.
               </div>
             )}

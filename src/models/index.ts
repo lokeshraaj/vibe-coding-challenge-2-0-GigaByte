@@ -1,5 +1,6 @@
 export * from "./Academy";
 export * from "./User";
+export * from "./Account";
 export * from "./Coach";
 export * from "./Scout";
 export * from "./Player";

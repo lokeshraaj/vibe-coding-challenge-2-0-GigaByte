@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/auth/jwt";
+import { auth } from "@/auth";
 import { AuthSessionPayload, UserRole } from "@/types";
 import {
   UnauthorizedError,
@@ -8,9 +9,31 @@ import {
 } from "@/lib/errors";
 
 /**
- * Extracts session from request cookies or next/headers cookies.
+ * Extracts session from Auth.js session, request cookies, or next/headers cookies.
  */
 export async function getAuthSession(req?: Request): Promise<AuthSessionPayload | null> {
+  // 1. Check Auth.js session (Google OAuth & Auth.js sessions)
+  try {
+    const nextAuthSession = await auth();
+    if (nextAuthSession && nextAuthSession.user) {
+      const u = nextAuthSession.user as any;
+      if (u.id || u.email) {
+        return {
+          userId: u.id || "",
+          email: u.email || "",
+          name: u.name || "User",
+          role: u.role || "PLAYER",
+          academyId: u.academyId,
+          coachId: u.coachId,
+          playerId: u.playerId,
+        };
+      }
+    }
+  } catch {
+    // In non-auth context or test environments
+  }
+
+  // 2. Check athlix_session cookie (custom credentials token)
   let token: string | undefined;
 
   if (req) {

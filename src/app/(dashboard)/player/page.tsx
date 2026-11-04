@@ -57,19 +57,19 @@ export default function PlayerDashboardPage() {
     <DashboardShell allowedRoles={["PLAYER"]}>
       <div className="space-y-8 max-w-6xl mx-auto">
         {/* Athlete Hero Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-xl bg-athletic-charcoal border border-athletic-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white border border-[#DCE1E3] shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-athletic-lime text-athletic-black font-black text-xl italic shadow-[0_0_20px_rgba(163,255,0,0.3)]">
-              <User className="h-7 w-7" />
+            <div className="flex h-13 w-13 items-center justify-center rounded-xl bg-[#C6F432] text-[#101820] font-bold shadow-xs">
+              <User className="h-6 w-6 stroke-[2.5]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-black italic tracking-tight uppercase text-white">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
                   {data?.player?.name || "Athlete Portal"}
                 </h1>
                 {elig && <StatusBadge status={elig.status} type="eligibility" />}
               </div>
-              <p className="text-xs text-athletic-textMuted uppercase font-bold tracking-wider mt-0.5">
+              <p className="text-xs text-[#8B969E] uppercase font-bold tracking-wider mt-0.5">
                 {data?.player?.playerCode} • {data?.player?.sport} • {data?.player?.position}
               </p>
             </div>
@@ -103,110 +103,110 @@ export default function PlayerDashboardPage() {
 
         {/* Eligibility Verification Checklist Card */}
         {elig && (
-          <Card className="border-athletic-border bg-athletic-charcoal">
-            <CardHeader className="pb-3 border-b border-athletic-border/70">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Award className="h-5 w-5 text-athletic-lime" />
+          <Card className="border-[#DCE1E3] bg-white shadow-sm">
+            <CardHeader className="pb-3 border-b border-[#DCE1E3]">
+              <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
+                <Award className="h-5 w-5 text-[#101820]" />
                 <span>Professional Trial Eligibility Checklist</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Condition 1 */}
-                <div className="p-4 rounded-lg bg-athletic-black border border-athletic-border space-y-2">
+                <div className="p-4 rounded-xl bg-[#F4F3EE] border border-[#DCE1E3] space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-white">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#101820]">
                       1. Attendance Threshold (&ge; 75%)
                     </span>
                     {elig.isAttendanceMet ? (
-                      <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                      <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
                         <CheckCircle className="h-4 w-4" /> Passed
                       </span>
                     ) : (
-                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                      <span className="text-xs font-bold text-amber-700 flex items-center gap-1">
                         <Clock className="h-4 w-4" /> Pending
                       </span>
                     )}
                   </div>
-                  <div className="w-full bg-athletic-charcoal h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-[#DCE1E3] h-2 rounded-full overflow-hidden">
                     <div
-                      className={`h-full ${elig.isAttendanceMet ? "bg-emerald-400" : "bg-amber-400"}`}
+                      className={`h-full rounded-full ${elig.isAttendanceMet ? "bg-emerald-600" : "bg-amber-500"}`}
                       style={{ width: `${Math.min(100, elig.attendancePercentage)}%` }}
                     />
                   </div>
-                  <p className="text-[11px] text-athletic-textMuted">
-                    Current: <strong>{elig.attendancePercentage}%</strong> across {elig.totalClosedSessions} closed sessions.
+                  <p className="text-[11px] text-[#8B969E]">
+                    Current: <strong className="text-[#101820]">{elig.attendancePercentage}%</strong> across {elig.totalClosedSessions} closed sessions.
                   </p>
                 </div>
 
                 {/* Condition 2 */}
-                <div className="p-4 rounded-lg bg-athletic-black border border-athletic-border space-y-2">
+                <div className="p-4 rounded-xl bg-[#F4F3EE] border border-[#DCE1E3] space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-white">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#101820]">
                       2. Match Participation (&ge; 2 Matches)
                     </span>
                     {elig.isMatchesMet ? (
-                      <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                      <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
                         <CheckCircle className="h-4 w-4" /> Passed
                       </span>
                     ) : (
-                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                      <span className="text-xs font-bold text-amber-700 flex items-center gap-1">
                         <Clock className="h-4 w-4" /> Pending
                       </span>
                     )}
                   </div>
-                  <div className="w-full bg-athletic-charcoal h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-[#DCE1E3] h-2 rounded-full overflow-hidden">
                     <div
-                      className={`h-full ${elig.isMatchesMet ? "bg-emerald-400" : "bg-amber-400"}`}
+                      className={`h-full rounded-full ${elig.isMatchesMet ? "bg-emerald-600" : "bg-amber-500"}`}
                       style={{ width: `${Math.min(100, (elig.matchesPlayed / 2) * 100)}%` }}
                     />
                   </div>
-                  <p className="text-[11px] text-athletic-textMuted">
-                    Current: <strong>{elig.matchesPlayed}</strong> of 2 required matches.
+                  <p className="text-[11px] text-[#8B969E]">
+                    Current: <strong className="text-[#101820]">{elig.matchesPlayed}</strong> of 2 required matches.
                   </p>
                 </div>
               </div>
 
-              <div className="p-3 rounded bg-athletic-black/50 text-xs text-athletic-textMuted border border-athletic-border/60">
-                <strong>Current Status Reason:</strong> {elig.reasons[0]}
+              <div className="p-3.5 rounded-lg bg-[#F4F3EE] text-xs text-[#8B969E] border border-[#DCE1E3]">
+                <strong className="text-[#101820]">Current Status Reason:</strong> {elig.reasons[0]}
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* Match History Table */}
-        <Card>
-          <CardHeader className="pb-3 border-b border-athletic-border/70">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-athletic-lime" />
+        <Card className="border-[#DCE1E3] bg-white shadow-sm">
+          <CardHeader className="pb-3 border-b border-[#DCE1E3]">
+            <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
+              <Trophy className="h-5 w-5 text-[#101820]" />
               <span>Personal Match History</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
-              <div className="py-8 text-center text-xs text-athletic-textMuted">Loading match history...</div>
+              <div className="py-8 text-center text-xs text-[#8B969E]">Loading match history...</div>
             ) : data?.matches && data.matches.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-athletic-border/80 bg-athletic-black/50 text-[10px] uppercase font-black tracking-wider text-athletic-textMuted">
+                    <tr className="border-b border-[#DCE1E3] bg-[#F4F3EE] text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
                       <th className="p-4">Match Date</th>
                       <th className="p-4">Opponent</th>
                       <th className="p-4">My Score</th>
                       <th className="p-4">Team Result</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-athletic-border/50">
+                  <tbody className="divide-y divide-[#DCE1E3]">
                     {data.matches.map((m) => (
-                      <tr key={m.id} className="hover:bg-athletic-elevated/40 transition-colors">
-                        <td className="p-4 font-bold text-white">
+                      <tr key={m.id} className="hover:bg-[#F4F3EE] transition-colors">
+                        <td className="p-4 font-bold text-[#101820]">
                           {new Date(m.date).toLocaleDateString()}
                         </td>
-                        <td className="p-4 font-bold text-white">
+                        <td className="p-4 font-bold text-[#101820]">
                           vs {m.opponentName}
                         </td>
                         <td className="p-4">
-                          <span className="text-sm font-black text-athletic-lime">
+                          <span className="text-sm font-extrabold text-[#101820]">
                             {m.score} {m.scoreLabel}
                           </span>
                         </td>
@@ -219,7 +219,7 @@ export default function PlayerDashboardPage() {
                 </table>
               </div>
             ) : (
-              <div className="py-8 text-center text-xs text-athletic-textMuted">
+              <div className="py-8 text-center text-xs text-[#8B969E]">
                 No match participation records logged yet.
               </div>
             )}

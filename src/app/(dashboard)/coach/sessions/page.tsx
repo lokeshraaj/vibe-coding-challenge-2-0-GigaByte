@@ -13,8 +13,6 @@ import {
   CheckCircle2,
   XCircle,
   Lock,
-  Unlock,
-  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -233,11 +231,11 @@ export default function CoachSessionsPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black italic tracking-tight uppercase text-white">
-              PRACTICE SESSIONS & ATTENDANCE
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+              Practice Sessions & Attendance
             </h1>
-            <p className="text-xs text-athletic-textMuted uppercase tracking-wider mt-1">
-              LOG ROSTERS & ENFORCE ATTENDANCE IMMUTABILITY
+            <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
+              Log Rosters & Enforce Attendance Immutability
             </p>
           </div>
 
@@ -245,7 +243,7 @@ export default function CoachSessionsPage() {
             variant="athletic"
             size="sm"
             onClick={() => setIsCreateOpen(true)}
-            className="gap-2"
+            className="gap-2 font-bold shadow-sm"
           >
             <Plus className="h-4 w-4" />
             <span>Open Practice Session</span>
@@ -256,16 +254,16 @@ export default function CoachSessionsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Sessions List */}
           <div className="lg:col-span-5 space-y-4">
-            <Card>
-              <CardHeader className="pb-3 border-b border-athletic-border/70">
-                <CardTitle className="text-sm uppercase flex items-center justify-between">
+            <Card className="border-[#DCE1E3] bg-white shadow-sm">
+              <CardHeader className="pb-3 border-b border-[#DCE1E3]">
+                <CardTitle className="text-sm uppercase flex items-center justify-between text-[#101820]">
                   <span>Sessions History</span>
-                  <span className="text-athletic-lime font-bold">{sessions.length}</span>
+                  <span className="text-[#101820] font-bold">{sessions.length}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3 space-y-2">
                 {loading ? (
-                  <div className="py-8 text-center text-xs text-athletic-textMuted">Loading...</div>
+                  <div className="py-8 text-center text-xs text-[#8B969E]">Loading...</div>
                 ) : sessions.length > 0 ? (
                   sessions.map((s) => {
                     const isSelected = activeSessionId === s.id;
@@ -275,19 +273,19 @@ export default function CoachSessionsPage() {
                         onClick={() => handleOpenSessionSheet(s.id)}
                         className={`w-full text-left p-3.5 rounded-lg border transition-all ${
                           isSelected
-                            ? "bg-athletic-charcoal border-athletic-lime shadow-[0_0_15px_rgba(163,255,0,0.2)]"
-                            : "bg-athletic-black border-athletic-border hover:border-athletic-border/90"
+                            ? "bg-[#F4F3EE] border-[#101820] shadow-xs"
+                            : "bg-white border-[#DCE1E3] hover:border-[#101820]/40"
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-sm text-white">{s.title || "Practice Session"}</span>
+                          <span className="font-bold text-sm text-[#101820]">{s.title || "Practice Session"}</span>
                           <StatusBadge status={s.status} type="session" />
                         </div>
-                        <div className="flex items-center justify-between text-xs text-athletic-textMuted mt-1">
+                        <div className="flex items-center justify-between text-xs text-[#8B969E] mt-1">
                           <span>
                             {new Date(s.date).toLocaleDateString()} • {s.sport}
                           </span>
-                          <span className="font-semibold text-white">
+                          <span className="font-semibold text-[#101820]">
                             {s.presentCount} Present / {s.totalMarked} Marked
                           </span>
                         </div>
@@ -295,7 +293,7 @@ export default function CoachSessionsPage() {
                     );
                   })
                 ) : (
-                  <div className="py-8 text-center text-xs text-athletic-textMuted space-y-3">
+                  <div className="py-8 text-center text-xs text-[#8B969E] space-y-3">
                     <p>No practice sessions scheduled yet.</p>
                     <Button variant="athletic" size="sm" onClick={() => setIsCreateOpen(true)}>
                       Open Session
@@ -309,24 +307,24 @@ export default function CoachSessionsPage() {
           {/* Right Column: Attendance Marking Workspace */}
           <div className="lg:col-span-7">
             {activeSessionId && activeSessionDetails ? (
-              <Card className="border-athletic-border bg-athletic-charcoal">
-                <CardHeader className="border-b border-athletic-border/70 pb-4">
+              <Card className="border-[#DCE1E3] bg-white shadow-sm">
+                <CardHeader className="border-b border-[#DCE1E3] pb-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-black uppercase text-white">
+                        <h3 className="text-lg font-bold uppercase text-[#101820]">
                           {activeSessionDetails.session.title || "Practice Session"}
                         </h3>
                         <StatusBadge status={activeSessionDetails.session.status} type="session" />
                       </div>
-                      <p className="text-xs text-athletic-textMuted mt-0.5">
+                      <p className="text-xs text-[#8B969E] mt-0.5">
                         Date: {new Date(activeSessionDetails.session.date).toLocaleDateString()} • Sport:{" "}
                         {activeSessionDetails.session.sport}
                       </p>
                     </div>
 
                     {isClosed ? (
-                      <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold bg-emerald-950/60 px-3 py-1.5 rounded border border-emerald-800">
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-bold bg-emerald-50 px-3 py-1.5 rounded border border-emerald-200">
                         <Lock className="h-4 w-4" />
                         <span>IMMUTABLE (LOCKED)</span>
                       </div>
@@ -336,7 +334,7 @@ export default function CoachSessionsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleMarkAll("PRESENT")}
-                          className="text-[11px] text-athletic-lime"
+                          className="text-[11px] text-emerald-700 hover:bg-emerald-50 font-bold"
                         >
                           All Present
                         </Button>
@@ -344,7 +342,7 @@ export default function CoachSessionsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleMarkAll("ABSENT")}
-                          className="text-[11px] text-athletic-danger"
+                          className="text-[11px] text-rose-700 hover:bg-rose-50 font-bold"
                         >
                           All Absent
                         </Button>
@@ -355,45 +353,45 @@ export default function CoachSessionsPage() {
 
                 <CardContent className="p-0">
                   {/* Summary bar */}
-                  <div className="grid grid-cols-3 bg-athletic-black/60 p-3 text-center border-b border-athletic-border/70 text-xs">
+                  <div className="grid grid-cols-3 bg-[#F4F3EE] p-3 text-center border-b border-[#DCE1E3] text-xs">
                     <div>
-                      <span className="text-athletic-textMuted uppercase font-bold text-[10px] block">
+                      <span className="text-[#8B969E] uppercase font-bold text-[10px] block">
                         Roster
                       </span>
-                      <span className="font-black text-white text-base">
+                      <span className="font-extrabold text-[#101820] text-base">
                         {activeSessionDetails.roster.length}
                       </span>
                     </div>
                     <div>
-                      <span className="text-emerald-400 uppercase font-bold text-[10px] block">
+                      <span className="text-emerald-700 uppercase font-bold text-[10px] block">
                         Present
                       </span>
-                      <span className="font-black text-emerald-400 text-base">
+                      <span className="font-extrabold text-emerald-700 text-base">
                         {Array.from(attendanceRecords.values()).filter((v) => v === "PRESENT").length}
                       </span>
                     </div>
                     <div>
-                      <span className="text-rose-400 uppercase font-bold text-[10px] block">
+                      <span className="text-rose-700 uppercase font-bold text-[10px] block">
                         Absent
                       </span>
-                      <span className="font-black text-rose-400 text-base">
+                      <span className="font-extrabold text-rose-700 text-base">
                         {Array.from(attendanceRecords.values()).filter((v) => v === "ABSENT").length}
                       </span>
                     </div>
                   </div>
 
                   {/* Roster Attendance Table */}
-                  <div className="max-h-[420px] overflow-y-auto divide-y divide-athletic-border/50">
+                  <div className="max-h-[420px] overflow-y-auto divide-y divide-[#DCE1E3]">
                     {activeSessionDetails.roster.map((player: RosterPlayerAttendance) => {
                       const currentStatus = attendanceRecords.get(player.playerId);
                       return (
                         <div
                           key={player.playerId}
-                          className="flex items-center justify-between p-3.5 hover:bg-athletic-elevated/40 transition-colors text-xs"
+                          className="flex items-center justify-between p-3.5 hover:bg-[#F4F3EE] transition-colors text-xs"
                         >
                           <div>
-                            <div className="font-bold text-white text-sm">{player.name}</div>
-                            <div className="text-[11px] text-athletic-textMuted">
+                            <div className="font-bold text-[#101820] text-sm">{player.name}</div>
+                            <div className="text-[11px] text-[#8B969E]">
                               {player.playerCode} • {player.position}
                             </div>
                           </div>
@@ -405,8 +403,8 @@ export default function CoachSessionsPage() {
                               onClick={() => handleSetPlayerStatus(player.playerId, "PRESENT")}
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold uppercase transition-all ${
                                 currentStatus === "PRESENT"
-                                  ? "bg-emerald-500 text-athletic-black shadow-[0_0_12px_rgba(16,185,129,0.4)]"
-                                  : "bg-athletic-black text-neutral-400 border border-athletic-border hover:border-emerald-500/50"
+                                  ? "bg-emerald-600 text-white shadow-xs"
+                                  : "bg-white text-[#202A32] border border-[#DCE1E3] hover:border-emerald-500"
                               } ${isClosed ? "cursor-not-allowed opacity-75" : ""}`}
                             >
                               <CheckCircle2 className="h-4 w-4" />
@@ -419,8 +417,8 @@ export default function CoachSessionsPage() {
                               onClick={() => handleSetPlayerStatus(player.playerId, "ABSENT")}
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold uppercase transition-all ${
                                 currentStatus === "ABSENT"
-                                  ? "bg-rose-500 text-white shadow-[0_0_12px_rgba(244,63,94,0.4)]"
-                                  : "bg-athletic-black text-neutral-400 border border-athletic-border hover:border-rose-500/50"
+                                  ? "bg-rose-600 text-white shadow-xs"
+                                  : "bg-white text-[#202A32] border border-[#DCE1E3] hover:border-rose-500"
                               } ${isClosed ? "cursor-not-allowed opacity-75" : ""}`}
                             >
                               <XCircle className="h-4 w-4" />
@@ -434,13 +432,13 @@ export default function CoachSessionsPage() {
 
                   {/* Bottom Action Footer */}
                   {!isClosed && (
-                    <div className="p-4 border-t border-athletic-border/70 flex flex-col sm:flex-row items-center justify-between gap-3 bg-athletic-black/40">
+                    <div className="p-4 border-t border-[#DCE1E3] flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#F4F3EE]/50">
                       <Button
-                        variant="secondary"
+                        variant="outline"
                         size="sm"
                         onClick={handleSaveAttendance}
                         isLoading={savingAttendance}
-                        className="w-full sm:w-auto"
+                        className="w-full sm:w-auto border-[#DCE1E3] bg-white text-[#101820]"
                       >
                         Save Attendance Draft
                       </Button>
@@ -450,7 +448,7 @@ export default function CoachSessionsPage() {
                         size="sm"
                         onClick={handleCloseSession}
                         isLoading={closingSession}
-                        className="w-full sm:w-auto gap-2"
+                        className="w-full sm:w-auto gap-2 font-bold shadow-sm"
                       >
                         <Lock className="h-4 w-4" />
                         <span>Lock & Close Session</span>
@@ -460,9 +458,9 @@ export default function CoachSessionsPage() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="p-12 text-center text-xs text-athletic-textMuted border-dashed">
-                <CalendarCheck className="h-10 w-10 mx-auto text-athletic-lime/50 mb-3" />
-                <h4 className="text-sm font-bold text-white uppercase">No Session Selected</h4>
+              <Card className="p-12 text-center text-xs text-[#8B969E] border-dashed border-[#DCE1E3] bg-white shadow-sm">
+                <CalendarCheck className="h-10 w-10 mx-auto text-[#101820]/40 mb-3" />
+                <h4 className="text-sm font-bold text-[#101820] uppercase">No Session Selected</h4>
                 <p className="mt-1">
                   Select a session from the history or open a new practice session to mark attendance.
                 </p>
@@ -473,14 +471,14 @@ export default function CoachSessionsPage() {
 
         {/* Modal: Open Practice Session */}
         {isCreateOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md border-athletic-border bg-athletic-charcoal shadow-2xl">
-              <div className="flex items-center justify-between p-6 border-b border-athletic-border/70">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+            <Card className="w-full max-w-md border-[#DCE1E3] bg-white shadow-xl">
+              <div className="flex items-center justify-between p-6 border-b border-[#DCE1E3]">
                 <div className="flex items-center gap-2">
-                  <CalendarCheck className="h-5 w-5 text-athletic-lime" />
-                  <h3 className="text-lg font-black uppercase text-white">Open Practice Session</h3>
+                  <CalendarCheck className="h-5 w-5 text-[#101820]" />
+                  <h3 className="text-lg font-bold uppercase text-[#101820]">Open Practice Session</h3>
                 </div>
-                <button onClick={() => setIsCreateOpen(false)} className="text-athletic-textMuted hover:text-white">
+                <button onClick={() => setIsCreateOpen(false)} className="text-[#8B969E] hover:text-[#101820]">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -495,11 +493,11 @@ export default function CoachSessionsPage() {
                 />
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-athletic-textMuted">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
                     Sport Discipline *
                   </label>
                   <select
-                    className="flex h-11 w-full rounded-md border border-athletic-border bg-athletic-black px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:border-athletic-lime"
+                    className="flex h-11 w-full rounded-md border border-[#DCE1E3] bg-white px-3 py-2 text-sm text-[#101820] focus-visible:outline-none focus-visible:border-[#101820]"
                     value={newSessionForm.sport}
                     onChange={(e) => setNewSessionForm({ ...newSessionForm, sport: e.target.value })}
                   >
@@ -518,7 +516,7 @@ export default function CoachSessionsPage() {
                   onChange={(e) => setNewSessionForm({ ...newSessionForm, title: e.target.value })}
                 />
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-athletic-border/70">
+                <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
                   <Button type="button" variant="ghost" size="sm" onClick={() => setIsCreateOpen(false)}>
                     Cancel
                   </Button>

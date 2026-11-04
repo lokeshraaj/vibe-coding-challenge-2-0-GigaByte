@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Zap, Building2, User, Lock, ArrowRight, ShieldCheck } from "lucide-react";
+import { Zap, Building2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -49,7 +49,7 @@ export default function RegisterAcademyPage() {
       }
 
       toast.success("Academy registered successfully! Welcome to Athlix.");
-      router.push("/dashboard/owner");
+      router.push("/owner");
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Registration failed");
@@ -59,34 +59,32 @@ export default function RegisterAcademyPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-athletic-black px-4 py-12 relative overflow-hidden">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-athletic-lime/5 rounded-full blur-[140px] pointer-events-none" />
-
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F4F3EE] px-4 py-12">
       {/* Brand Header */}
       <Link href="/" className="mb-8 flex items-center gap-3 group">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-athletic-lime text-athletic-black font-black italic shadow-[0_0_20px_rgba(163,255,0,0.4)]">
-          <Zap className="h-7 w-7 stroke-[3]" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#C6F432] text-[#101820] shadow-sm">
+          <Zap className="h-6 w-6 fill-[#101820]" />
         </div>
         <div className="flex flex-col">
-          <span className="text-3xl font-black italic tracking-tight text-white uppercase group-hover:text-athletic-lime transition-colors">
+          <span className="text-2xl font-black italic tracking-tight text-[#101820] uppercase">
             ATHLIX
           </span>
-          <span className="text-[10px] font-bold tracking-widest text-athletic-textMuted uppercase -mt-1">
+          <span className="text-[10px] font-bold tracking-widest text-[#8B969E] uppercase -mt-1">
             ENTERPRISE ACADEMY ONBOARDING
           </span>
         </div>
       </Link>
 
-      <Card className="w-full max-w-2xl border-athletic-border bg-athletic-charcoal relative z-10 shadow-2xl">
-        <CardHeader className="space-y-1 border-b border-athletic-border/60 pb-6">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-athletic-lime">
+      <Card className="w-full max-w-2xl border-[#DCE1E3] bg-white shadow-sm">
+        <CardHeader className="space-y-1.5 border-b border-[#DCE1E3] pb-5">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#101820]">
             <Building2 className="h-4 w-4" />
             <span>NEW TENANT REGISTRATION</span>
           </div>
-          <CardTitle className="text-3xl font-black italic text-white uppercase">
-            REGISTER YOUR SPORTS ACADEMY
+          <CardTitle className="text-2xl font-extrabold text-[#101820] tracking-tight">
+            Register Your Sports Academy
           </CardTitle>
-          <CardDescription className="text-athletic-textMuted">
+          <CardDescription className="text-sm text-[#8B969E]">
             Create an independent multi-tenant academy environment with isolated coach rosters and scouting.
           </CardDescription>
         </CardHeader>
@@ -95,8 +93,8 @@ export default function RegisterAcademyPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Section 1: Academy Details */}
             <div className="space-y-4">
-              <h4 className="text-xs font-black uppercase tracking-wider text-athletic-lime flex items-center gap-2">
-                <span>1. ACADEMY DETAILS</span>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-2">
+                <span>1. Academy Details</span>
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -160,16 +158,16 @@ export default function RegisterAcademyPage() {
             </div>
 
             {/* Section 2: Owner Account */}
-            <div className="space-y-4 pt-4 border-t border-athletic-border/60">
-              <h4 className="text-xs font-black uppercase tracking-wider text-athletic-lime flex items-center gap-2">
-                <span>2. ACADEMY OWNER ACCOUNT</span>
+            <div className="space-y-4 pt-4 border-t border-[#DCE1E3]">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-2">
+                <span>2. Academy Owner Account</span>
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Owner Full Name *"
                   name="ownerName"
-                  placeholder="e.g. Director David Sterling"
+                  placeholder="e.g. David Sterling"
                   value={formData.ownerName}
                   onChange={handleChange}
                   required
@@ -201,19 +199,19 @@ export default function RegisterAcademyPage() {
               type="submit"
               variant="athletic"
               size="lg"
-              className="w-full text-base gap-2"
+              className="w-full text-sm font-bold gap-2 shadow-sm"
               isLoading={isLoading}
             >
               <span>Provision Academy Tenant</span>
-              <ArrowRight className="h-5 w-5" />
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-xs text-athletic-textMuted">
+          <div className="mt-6 text-center text-xs text-[#8B969E]">
             Already have an account?{" "}
             <Link
               href="/login"
-              className="font-bold text-athletic-lime hover:underline uppercase tracking-wider"
+              className="font-bold text-[#101820] hover:underline uppercase tracking-wider"
             >
               Sign In
             </Link>

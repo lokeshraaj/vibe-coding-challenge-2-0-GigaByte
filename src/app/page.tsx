@@ -3,146 +3,139 @@ import { Navbar } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
 import { Button } from "@/components/ui/button";
 import {
-  Zap,
   ShieldCheck,
-  Award,
-  Users,
-  Trophy,
   CalendarCheck,
+  Trophy,
+  Award,
   Search,
-  ArrowRight,
-  CheckCircle,
-  Activity,
-  Flame,
-  Target,
   BarChart3,
-  Layers,
+  ArrowRight,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col bg-athletic-black selection:bg-athletic-lime selection:text-athletic-black">
+    <div className="flex min-h-screen flex-col bg-[#F4F3EE] text-[#101820]">
       <Navbar />
 
       <main className="flex-1">
         {/* HERO SECTION */}
-        <section className="relative overflow-hidden pt-12 pb-24 lg:pt-20 lg:pb-36 border-b border-athletic-border/50">
-          {/* Subtle grid background */}
-          <div className="absolute inset-0 athletic-grid opacity-20 pointer-events-none" />
-          
-          {/* Neon Radial Gradient */}
-          <div className="absolute -top-40 right-1/4 w-[600px] h-[600px] bg-athletic-lime/10 rounded-full blur-[140px] pointer-events-none" />
-
-          <div className="container relative mx-auto px-4 sm:px-8">
+        <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-32 border-b border-[#DCE1E3]">
+          <div className="container mx-auto px-4 sm:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              {/* Left Column: Bold Editorial Copy */}
+              {/* Left Column */}
               <div className="lg:col-span-7 space-y-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-athletic-charcoal border border-athletic-border text-xs font-bold uppercase tracking-widest text-athletic-lime">
-                  <Flame className="h-4 w-4 fill-athletic-lime" />
-                  <span>The Enterprise Sports Academy Operating System</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#DCE1E3] text-xs font-semibold uppercase tracking-wider text-[#202A32] shadow-sm">
+                  <span className="flex h-2 w-2 rounded-full bg-[#C6F432] ring-2 ring-[#C6F432]/40" />
+                  <span>Multi-Tenant Sports Academy Platform</span>
                 </div>
 
-                <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black italic tracking-tighter uppercase leading-[0.9] text-white">
-                  POWERING <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-athletic-lime via-white to-athletic-lime">
-                    NEXT-GEN
-                  </span>{" "}
-                  <br />
-                  CHAMPIONS.
+                <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight uppercase leading-[1.05] text-[#101820]">
+                  DEVELOP ATHLETES. <br />
+                  <span className="text-[#101820]">DISCOVER CHAMPIONS.</span>
                 </h1>
 
-                <p className="text-base sm:text-lg text-athletic-textMuted max-w-xl font-normal leading-relaxed">
-                  Digitize sports academy operations, enforce practice attendance immutability, record competitive match performance, and automatically scout trial-ready talent through an objective eligibility engine.
+                <p className="text-base sm:text-lg text-[#8B969E] max-w-xl font-normal leading-relaxed">
+                  One platform to manage your sports academy, track athlete development, measure performance and connect emerging talent with scouts.
                 </p>
 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
                   <Link href="/register-academy">
-                    <Button variant="athletic" size="lg" className="w-full sm:w-auto text-base gap-3">
+                    <Button variant="athletic" size="lg" className="w-full sm:w-auto text-sm font-bold gap-2 shadow-sm">
                       <span>Launch Your Academy</span>
-                      <ArrowRight className="h-5 w-5" />
+                      <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
                   <Link href="/login">
-                    <Button variant="secondary" size="lg" className="w-full sm:w-auto text-base">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full sm:w-auto text-sm font-semibold border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE]"
+                    >
                       Sign In To Dashboard
                     </Button>
                   </Link>
                 </div>
 
                 {/* Key Invariant Highlights */}
-                <div className="pt-8 grid grid-cols-3 gap-6 border-t border-athletic-border/50">
+                <div className="pt-8 grid grid-cols-3 gap-6 border-t border-[#DCE1E3]">
                   <div>
-                    <div className="text-2xl sm:text-3xl font-black italic text-white tracking-tight">100%</div>
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-athletic-textMuted mt-0.5">
-                      Tenant Isolation
+                    <div className="text-2xl sm:text-3xl font-extrabold text-[#101820] tracking-tight">100%</div>
+                    <div className="text-[11px] font-medium uppercase tracking-wider text-[#8B969E] mt-0.5">
+                      Data Isolation
                     </div>
                   </div>
                   <div>
-                    <div className="text-2xl sm:text-3xl font-black italic text-athletic-lime tracking-tight">75%+</div>
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-athletic-textMuted mt-0.5">
-                      Trial Attendance Gate
+                    <div className="text-2xl sm:text-3xl font-extrabold text-[#101820] tracking-tight">&ge; 75%</div>
+                    <div className="text-[11px] font-medium uppercase tracking-wider text-[#8B969E] mt-0.5">
+                      Attendance Gate
                     </div>
                   </div>
                   <div>
-                    <div className="text-2xl sm:text-3xl font-black italic text-white tracking-tight">&ge; 2</div>
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-athletic-textMuted mt-0.5">
+                    <div className="text-2xl sm:text-3xl font-extrabold text-[#101820] tracking-tight">&ge; 2</div>
+                    <div className="text-[11px] font-medium uppercase tracking-wider text-[#8B969E] mt-0.5">
                       Verified Matches
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: Athletic Hero Graphic Card */}
-              <div className="lg:col-span-5 relative">
-                <div className="relative mx-auto max-w-md rounded-2xl border-2 border-athletic-border bg-athletic-charcoal p-6 shadow-2xl athletic-glow">
-                  {/* Neon Top Badge */}
-                  <div className="flex items-center justify-between pb-6 border-b border-athletic-border/60">
+              {/* Right Column: Clean Athlete Performance Card */}
+              <div className="lg:col-span-5">
+                <div className="relative mx-auto max-w-md rounded-2xl border border-[#DCE1E3] bg-white p-6 shadow-sm">
+                  {/* Top Header */}
+                  <div className="flex items-center justify-between pb-5 border-b border-[#DCE1E3]">
                     <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-athletic-lime animate-pulse" />
-                      <span className="text-xs font-black uppercase tracking-widest text-athletic-lime">
-                        LIVE SCOUTING RADAR
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#C6F432] ring-4 ring-[#C6F432]/30" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-[#101820]">
+                        Verified Talent Radar
                       </span>
                     </div>
-                    <span className="text-xs font-bold text-athletic-textMuted">REAL-TIME</span>
+                    <span className="text-[11px] font-medium text-[#8B969E] uppercase tracking-wider">
+                      Live Metric Engine
+                    </span>
                   </div>
 
-                  {/* Athlete Mock Card */}
-                  <div className="py-6 space-y-4">
+                  {/* Athlete Mock Card Body */}
+                  <div className="py-5 space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-xs font-bold uppercase text-athletic-textMuted">ATHLETE CODE</div>
-                        <div className="text-lg font-black text-white">FTB-2026-8842</div>
+                        <div className="text-[11px] font-medium uppercase tracking-wider text-[#8B969E]">
+                          Player Identification
+                        </div>
+                        <div className="text-base font-bold text-[#101820]">Marcus Vance</div>
+                        <div className="text-xs text-[#8B969E]">Forward • Under-19 Squad</div>
                       </div>
-                      <div className="px-3 py-1 rounded bg-athletic-lime/15 border border-athletic-lime/40 text-athletic-lime text-xs font-black uppercase tracking-wider shadow-[0_0_10px_rgba(163,255,0,0.3)]">
-                        TRIAL READY
+                      <div className="px-2.5 py-1 rounded-md bg-[#C6F432] text-[#101820] text-[11px] font-bold uppercase tracking-wider shadow-sm">
+                        Trial Eligible
                       </div>
                     </div>
 
-                    <div className="rounded-lg bg-athletic-black p-4 space-y-3 border border-athletic-border/60">
+                    <div className="rounded-xl bg-[#F4F3EE] p-4 space-y-3 border border-[#DCE1E3]">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-athletic-textMuted uppercase font-bold">Attendance Rate</span>
-                        <span className="text-athletic-lime font-black text-sm">88.5% (Meets &ge; 75%)</span>
+                        <span className="text-[#202A32] font-semibold">Attendance Record</span>
+                        <span className="text-[#101820] font-bold">88.5% (Threshold &ge;75%)</span>
                       </div>
-                      <div className="w-full bg-athletic-charcoal h-2 rounded-full overflow-hidden">
-                        <div className="bg-athletic-lime h-full w-[88.5%]" />
+                      <div className="w-full bg-[#DCE1E3] h-2 rounded-full overflow-hidden">
+                        <div className="bg-[#101820] h-full w-[88.5%] rounded-full" />
                       </div>
 
                       <div className="flex justify-between items-center text-xs pt-1">
-                        <span className="text-athletic-textMuted uppercase font-bold">Match Appearances</span>
-                        <span className="text-white font-black text-sm">4 Matches (Meets &ge; 2)</span>
+                        <span className="text-[#202A32] font-semibold">Competitive Matches</span>
+                        <span className="text-[#101820] font-bold">4 Matches (Min &ge;2)</span>
                       </div>
                     </div>
 
-                    {/* Invariant badge */}
-                    <div className="flex items-center gap-2 text-[11px] text-emerald-400 font-semibold bg-emerald-950/40 p-2.5 rounded border border-emerald-900/50">
-                      <CheckCircle className="h-4 w-4 shrink-0" />
-                      <span>Absent players strictly locked out from match sheets</span>
+                    <div className="flex items-center gap-2 text-xs text-[#202A32] font-medium bg-[#F4F3EE]/60 p-3 rounded-lg border border-[#DCE1E3]">
+                      <CheckCircle2 className="h-4 w-4 text-[#101820] shrink-0" />
+                      <span>Tamper-proof practice sessions & verified rosters</span>
                     </div>
                   </div>
 
-                  <div className="pt-2 text-center border-t border-athletic-border/60">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-athletic-textMuted">
-                      AUTOMATED MATHEMATICAL EVALUATION ENGINE
+                  <div className="pt-3 text-center border-t border-[#DCE1E3]">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
+                      Automated Mathematical Evaluation Engine
                     </span>
                   </div>
                 </div>
@@ -152,173 +145,176 @@ export default function HomePage() {
         </section>
 
         {/* FEATURES GRID */}
-        <section id="features" className="py-24 border-b border-athletic-border/50 bg-athletic-charcoal/30">
-          <div className="container mx-auto px-4 sm:px-8 space-y-16">
+        <section id="features" className="py-20 lg:py-28 border-b border-[#DCE1E3]">
+          <div className="container mx-auto px-4 sm:px-8 space-y-14">
             <div className="text-center max-w-2xl mx-auto space-y-3">
-              <h2 className="text-xs font-black uppercase tracking-widest text-athletic-lime">
-                ENTERPRISE CAPABILITIES
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#DCE1E3] text-[11px] font-bold uppercase tracking-wider text-[#202A32]">
+                <Sparkles className="h-3.5 w-3.5 text-[#101820]" />
+                <span>Architecture & Features</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#101820] uppercase">
+                Engineered For Sports Academies
               </h2>
-              <h3 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
-                ENGINEERED FOR SERIOUS ACADEMIES.
-              </h3>
-              <p className="text-sm text-athletic-textMuted">
-                Everything required to operate top-tier sports academies without cross-tenant interference or spreadsheets.
+              <p className="text-sm text-[#8B969E]">
+                Purpose-built modules to streamline operations, eliminate guesswork, and surface verified athletic talent.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Feature 1 */}
-              <div className="rounded-xl border border-athletic-border bg-athletic-charcoal p-8 space-y-4 hover:border-athletic-lime/50 transition-colors">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-athletic-black border border-athletic-border text-athletic-lime">
-                  <ShieldCheck className="h-6 w-6" />
+              <div className="rounded-xl border border-[#DCE1E3] bg-white p-6 space-y-3 shadow-sm hover:border-[#101820]/40 transition-colors">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-[#101820]">
+                  <ShieldCheck className="h-5 w-5" />
                 </div>
-                <h4 className="text-xl font-black italic uppercase text-white">Multi-Tenant Isolation</h4>
-                <p className="text-xs text-athletic-textMuted leading-relaxed">
-                  Every academy operates in absolute isolation. Automatic server-side query scoping guarantees no academy, coach, or player can ever access unauthorized data.
+                <h3 className="text-lg font-bold text-[#101820]">Multi-Tenant Isolation</h3>
+                <p className="text-xs text-[#8B969E] leading-relaxed">
+                  Every academy operates in a strictly isolated environment. Automatic server-side query scoping prevents any cross-tenant data leakage.
                 </p>
               </div>
 
               {/* Feature 2 */}
-              <div className="rounded-xl border border-athletic-border bg-athletic-charcoal p-8 space-y-4 hover:border-athletic-lime/50 transition-colors">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-athletic-black border border-athletic-border text-athletic-lime">
-                  <CalendarCheck className="h-6 w-6" />
+              <div className="rounded-xl border border-[#DCE1E3] bg-white p-6 space-y-3 shadow-sm hover:border-[#101820]/40 transition-colors">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-[#101820]">
+                  <CalendarCheck className="h-5 w-5" />
                 </div>
-                <h4 className="text-xl font-black italic uppercase text-white">Practice Attendance Locking</h4>
-                <p className="text-xs text-athletic-textMuted leading-relaxed">
-                  Coaches open sessions, mark attendance, and close them. Once closed, the records become tamper-proof and immutable for honest attendance audits.
+                <h3 className="text-lg font-bold text-[#101820]">Practice Attendance Locking</h3>
+                <p className="text-xs text-[#8B969E] leading-relaxed">
+                  Coaches log daily practice sessions and mark attendance. Once closed, attendance records are locked and become immutable.
                 </p>
               </div>
 
               {/* Feature 3 */}
-              <div className="rounded-xl border border-athletic-border bg-athletic-charcoal p-8 space-y-4 hover:border-athletic-lime/50 transition-colors">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-athletic-black border border-athletic-border text-athletic-lime">
-                  <Trophy className="h-6 w-6" />
+              <div className="rounded-xl border border-[#DCE1E3] bg-white p-6 space-y-3 shadow-sm hover:border-[#101820]/40 transition-colors">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-[#101820]">
+                  <Trophy className="h-5 w-5" />
                 </div>
-                <h4 className="text-xl font-black italic uppercase text-white">Match & Scorekeeping</h4>
-                <p className="text-xs text-athletic-textMuted leading-relaxed">
-                  Matches link directly to verified practice sessions. The engine strictly rejects absent players from match sheets, ensuring integrity in competition records.
+                <h3 className="text-lg font-bold text-[#101820]">Match Performance Records</h3>
+                <p className="text-xs text-[#8B969E] leading-relaxed">
+                  Record competitive matches linked to practice sessions. Absent players are automatically disqualified from match rosters.
                 </p>
               </div>
 
               {/* Feature 4 */}
-              <div className="rounded-xl border border-athletic-border bg-athletic-charcoal p-8 space-y-4 hover:border-athletic-lime/50 transition-colors">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-athletic-black border border-athletic-border text-athletic-lime">
-                  <Award className="h-6 w-6" />
+              <div className="rounded-xl border border-[#DCE1E3] bg-white p-6 space-y-3 shadow-sm hover:border-[#101820]/40 transition-colors">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-[#101820]">
+                  <Award className="h-5 w-5" />
                 </div>
-                <h4 className="text-xl font-black italic uppercase text-white">Automated Eligibility Engine</h4>
-                <p className="text-xs text-athletic-textMuted leading-relaxed">
-                  Calculates whether players qualify for professional trials (&ge;75% attendance + &ge;2 matches played) without manual overrides or guesswork.
+                <h3 className="text-lg font-bold text-[#101820]">Automated Eligibility Engine</h3>
+                <p className="text-xs text-[#8B969E] leading-relaxed">
+                  Real-time mathematical evaluation determining trial readiness based on strict &ge;75% attendance and &ge;2 verified matches.
                 </p>
               </div>
 
               {/* Feature 5 */}
-              <div className="rounded-xl border border-athletic-border bg-athletic-charcoal p-8 space-y-4 hover:border-athletic-lime/50 transition-colors">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-athletic-black border border-athletic-border text-athletic-lime">
-                  <Search className="h-6 w-6" />
+              <div className="rounded-xl border border-[#DCE1E3] bg-white p-6 space-y-3 shadow-sm hover:border-[#101820]/40 transition-colors">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-[#101820]">
+                  <Search className="h-5 w-5" />
                 </div>
-                <h4 className="text-xl font-black italic uppercase text-white">Dedicated Scout Directory</h4>
-                <p className="text-xs text-athletic-textMuted leading-relaxed">
-                  Scouts are assigned to specific coaches and get a high-density, read-only talent directory revealing exclusively trial-ready athletes with verified stats.
+                <h3 className="text-lg font-bold text-[#101820]">Dedicated Scout Radar</h3>
+                <p className="text-xs text-[#8B969E] leading-relaxed">
+                  Scouts linked to coach cohorts gain direct access to verified trial-ready talent profiles with historical performance statistics.
                 </p>
               </div>
 
               {/* Feature 6 */}
-              <div className="rounded-xl border border-athletic-border bg-athletic-charcoal p-8 space-y-4 hover:border-athletic-lime/50 transition-colors">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-athletic-black border border-athletic-border text-athletic-lime">
-                  <BarChart3 className="h-6 w-6" />
+              <div className="rounded-xl border border-[#DCE1E3] bg-white p-6 space-y-3 shadow-sm hover:border-[#101820]/40 transition-colors">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-[#101820]">
+                  <BarChart3 className="h-5 w-5" />
                 </div>
-                <h4 className="text-xl font-black italic uppercase text-white">Role-Specific Dashboards</h4>
-                <p className="text-xs text-athletic-textMuted leading-relaxed">
-                  Tailored portals for Platform Admins, Academy Owners, Coaches, Scouts, and individual Players displaying real-time database analytics.
+                <h3 className="text-lg font-bold text-[#101820]">Role-Tailored Dashboards</h3>
+                <p className="text-xs text-[#8B969E] leading-relaxed">
+                  Tailored views for Platform Admins, Academy Owners, Coaches, Scouts, and Players with real-time operational insights.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* HOW IT WORKS */}
-        <section id="how-it-works" className="py-24 border-b border-athletic-border/50">
-          <div className="container mx-auto px-4 sm:px-8 space-y-16">
+        {/* WORKFLOW SECTION */}
+        <section id="how-it-works" className="py-20 lg:py-28 border-b border-[#DCE1E3]">
+          <div className="container mx-auto px-4 sm:px-8 space-y-14">
             <div className="text-center max-w-2xl mx-auto space-y-3">
-              <h2 className="text-xs font-black uppercase tracking-widest text-athletic-lime">WORKFLOW</h2>
-              <h3 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
-                FROM ENROLLMENT TO PRO SCOUTING.
-              </h3>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#8B969E]">Operational Flow</span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#101820] uppercase">
+                From Academy Onboarding To Scout Discovery
+              </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-              <div className="space-y-3 p-6 rounded-lg bg-athletic-charcoal border border-athletic-border">
-                <div className="text-3xl font-black italic text-athletic-lime">01</div>
-                <h4 className="text-base font-black uppercase text-white">Academy Onboarding</h4>
-                <p className="text-xs text-athletic-textMuted">
-                  Register your academy, invite head coaches, and assign dedicated talent scouts.
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="space-y-3 p-6 rounded-xl bg-white border border-[#DCE1E3] shadow-sm">
+                <div className="text-2xl font-black text-[#101820]">01</div>
+                <h3 className="text-base font-bold text-[#101820]">Onboard Academy</h3>
+                <p className="text-xs text-[#8B969E] leading-relaxed">
+                  Register your sports academy, configure sports disciplines, and invite head coaches.
                 </p>
               </div>
 
-              <div className="space-y-3 p-6 rounded-lg bg-athletic-charcoal border border-athletic-border">
-                <div className="text-3xl font-black italic text-athletic-lime">02</div>
-                <h4 className="text-base font-black uppercase text-white">Daily Practice</h4>
-                <p className="text-xs text-athletic-textMuted">
-                  Coaches mark attendance for each practice session and lock the session immutably.
+              <div className="space-y-3 p-6 rounded-xl bg-white border border-[#DCE1E3] shadow-sm">
+                <div className="text-2xl font-black text-[#101820]">02</div>
+                <h3 className="text-base font-bold text-[#101820]">Log Daily Practice</h3>
+                <p className="text-xs text-[#8B969E] leading-relaxed">
+                  Coaches mark attendance for each practice session and lock the record upon completion.
                 </p>
               </div>
 
-              <div className="space-y-3 p-6 rounded-lg bg-athletic-charcoal border border-athletic-border">
-                <div className="text-3xl font-black italic text-athletic-lime">03</div>
-                <h4 className="text-base font-black uppercase text-white">Match Day Scores</h4>
-                <p className="text-xs text-athletic-textMuted">
-                  Create matches linked to practice sessions. Field only present players and track goals, runs, or points.
+              <div className="space-y-3 p-6 rounded-xl bg-white border border-[#DCE1E3] shadow-sm">
+                <div className="text-2xl font-black text-[#101820]">03</div>
+                <h3 className="text-base font-bold text-[#101820]">Record Match Performance</h3>
+                <p className="text-xs text-[#8B969E] leading-relaxed">
+                  Track goals, assists, points, and ratings for players present in practice sessions.
                 </p>
               </div>
 
-              <div className="space-y-3 p-6 rounded-lg bg-athletic-charcoal border border-athletic-border">
-                <div className="text-3xl font-black italic text-athletic-lime">04</div>
-                <h4 className="text-base font-black uppercase text-white">Scout Radar</h4>
-                <p className="text-xs text-athletic-textMuted">
-                  When a player reaches &ge;75% attendance and &ge;2 matches, they unlock on the scout talent radar.
+              <div className="space-y-3 p-6 rounded-xl bg-white border border-[#DCE1E3] shadow-sm">
+                <div className="text-2xl font-black text-[#101820]">04</div>
+                <h3 className="text-base font-bold text-[#101820]">Unlock Pro Scout Radar</h3>
+                <p className="text-xs text-[#8B969E] leading-relaxed">
+                  Athletes meeting attendance and match criteria surface automatically in scout directories.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* SPORTS SUPPORTED */}
-        <section id="sports" className="py-20 border-b border-athletic-border/50 bg-athletic-charcoal/20">
-          <div className="container mx-auto px-4 sm:px-8 text-center space-y-10">
-            <h3 className="text-xs font-black uppercase tracking-widest text-athletic-lime">
-              MULTI-DISCIPLINE PLATFORM
-            </h3>
-            <div className="flex flex-wrap items-center justify-center gap-6 max-w-4xl mx-auto">
-              {["FOOTBALL", "BASKETBALL", "CRICKET", "TENNIS", "HOCKEY", "RUGBY", "BADMINTON", "ATHLETICS"].map(
+        {/* SPORTS DISCIPLINES */}
+        <section id="sports" className="py-16 border-b border-[#DCE1E3]">
+          <div className="container mx-auto px-4 sm:px-8 text-center space-y-8">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#8B969E]">
+              Supported Disciplines
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-3 max-w-3xl mx-auto">
+              {["Football", "Basketball", "Cricket", "Tennis", "Hockey", "Rugby", "Badminton", "Athletics"].map(
                 (sport) => (
-                  <div
+                  <span
                     key={sport}
-                    className="px-6 py-3 rounded-md bg-athletic-charcoal border border-athletic-border text-sm font-black italic tracking-wider text-white uppercase hover:border-athletic-lime hover:text-athletic-lime transition-all"
+                    className="px-4 py-2 rounded-lg bg-white border border-[#DCE1E3] text-xs font-semibold text-[#101820] shadow-sm"
                   >
                     {sport}
-                  </div>
+                  </span>
                 )
               )}
             </div>
           </div>
         </section>
 
-        {/* FINAL REGISTRATION CTA */}
-        <section className="py-24 relative overflow-hidden">
-          <div className="container mx-auto px-4 sm:px-8 text-center space-y-8 relative z-10">
-            <h2 className="text-4xl sm:text-6xl font-black italic uppercase tracking-tight text-white max-w-3xl mx-auto leading-tight">
-              ELEVATE YOUR ACADEMY TO PROFESSIONAL STANDARDS.
-            </h2>
-            <p className="text-sm sm:text-base text-athletic-textMuted max-w-xl mx-auto">
-              Join sports academies managing rosters, matches, and trial pipelines on Athlix today.
-            </p>
-            <div className="pt-4">
-              <Link href="/register-academy">
-                <Button variant="athletic" size="lg" className="px-10 text-base gap-3">
-                  <span>Register Academy Now</span>
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
-              </Link>
+        {/* CTA SECTION */}
+        <section className="py-20 lg:py-28">
+          <div className="container mx-auto px-4 sm:px-8">
+            <div className="rounded-2xl border border-[#DCE1E3] bg-white p-8 sm:p-14 text-center max-w-4xl mx-auto space-y-6 shadow-sm">
+              <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#101820] uppercase leading-tight">
+                Elevate Your Academy To Professional Standards
+              </h2>
+              <p className="text-sm sm:text-base text-[#8B969E] max-w-xl mx-auto">
+                Join forward-thinking sports academies managing athletes, tracking development, and opening trial opportunities on Athlix.
+              </p>
+              <div className="pt-2">
+                <Link href="/register-academy">
+                  <Button variant="athletic" size="lg" className="px-8 font-bold gap-2 shadow-sm">
+                    <span>Register Academy Now</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </section>

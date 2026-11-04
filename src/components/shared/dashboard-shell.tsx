@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardSidebar } from "@/components/shared/dashboard-sidebar";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
+import { FootballLoading } from "@/components/shared/football-loading";
 import { UserRole } from "@/types";
 
 interface SessionUser {
@@ -48,11 +49,11 @@ export function DashboardShell({ children, allowedRoles }: DashboardShellProps) 
         if (allowedRoles && !allowedRoles.includes(data.user.role)) {
           // Redirect to appropriate dashboard
           const r = data.user.role;
-          if (r === "PLATFORM_ADMIN") router.push("/dashboard/admin");
-          else if (r === "ACADEMY_OWNER") router.push("/dashboard/owner");
-          else if (r === "COACH") router.push("/dashboard/coach");
-          else if (r === "SCOUT") router.push("/dashboard/scout");
-          else if (r === "PLAYER") router.push("/dashboard/player");
+          if (r === "PLATFORM_ADMIN") router.push("/admin");
+          else if (r === "ACADEMY_OWNER") router.push("/owner");
+          else if (r === "COACH") router.push("/coach");
+          else if (r === "SCOUT") router.push("/scout");
+          else if (r === "PLAYER") router.push("/player");
           return;
         }
 
@@ -70,13 +71,8 @@ export function DashboardShell({ children, allowedRoles }: DashboardShellProps) 
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-athletic-black">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-athletic-border border-t-athletic-lime" />
-          <span className="text-xs font-black uppercase tracking-widest text-athletic-textMuted">
-            AUTHENTICATING TENANT ENVIRONMENT...
-          </span>
-        </div>
+      <div className="flex h-screen w-full items-center justify-center bg-[#F4F3EE]">
+        <FootballLoading size="md" text="CONNECTING ATHLIX SECURE WORKSPACE..." />
       </div>
     );
   }
@@ -86,7 +82,7 @@ export function DashboardShell({ children, allowedRoles }: DashboardShellProps) 
   }
 
   return (
-    <div className="flex min-h-screen bg-athletic-black text-white">
+    <div className="flex min-h-screen bg-[#F4F3EE] text-[#101820]">
       <DashboardSidebar role={user.role} academyName={user.academy?.name} />
       <div className="flex flex-1 flex-col overflow-x-hidden">
         <DashboardHeader

@@ -11,7 +11,6 @@ import {
   Search,
   UserCheck,
   Building2,
-  FileSpreadsheet,
   Award,
   ChevronLeft,
   ChevronRight,
@@ -39,33 +38,33 @@ export function DashboardSidebar({ role, academyName }: SidebarProps) {
     switch (role) {
       case "PLATFORM_ADMIN":
         return [
-          { label: "Platform Overview", href: "/dashboard/admin", icon: <LayoutDashboard className="h-5 w-5" /> },
-          { label: "Academies Directory", href: "/dashboard/admin/academies", icon: <Building2 className="h-5 w-5" /> },
+          { label: "Platform Overview", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" /> },
+          { label: "Academies Directory", href: "/admin", icon: <Building2 className="h-4 w-4" /> },
         ];
       case "ACADEMY_OWNER":
         return [
-          { label: "Academy HQ", href: "/dashboard/owner", icon: <LayoutDashboard className="h-5 w-5" /> },
-          { label: "Coaches", href: "/dashboard/owner/coaches", icon: <UserCheck className="h-5 w-5" /> },
-          { label: "Scouts", href: "/dashboard/owner/scouts", icon: <Search className="h-5 w-5" /> },
-          { label: "All Players", href: "/dashboard/owner/players", icon: <Users className="h-5 w-5" /> },
-          { label: "Practice Sessions", href: "/dashboard/owner/sessions", icon: <CalendarCheck className="h-5 w-5" /> },
-          { label: "Matches", href: "/dashboard/owner/matches", icon: <Trophy className="h-5 w-5" /> },
+          { label: "Academy HQ", href: "/owner", icon: <LayoutDashboard className="h-4 w-4" /> },
+          { label: "Coaching Staff", href: "/owner/coaches", icon: <UserCheck className="h-4 w-4" /> },
+          { label: "Scout Network", href: "/owner/scouts", icon: <Search className="h-4 w-4" /> },
+          { label: "All Athletes", href: "/owner/players", icon: <Users className="h-4 w-4" /> },
+          { label: "Practice Sessions", href: "/owner/sessions", icon: <CalendarCheck className="h-4 w-4" /> },
+          { label: "Match Records", href: "/owner/matches", icon: <Trophy className="h-4 w-4" /> },
         ];
       case "COACH":
         return [
-          { label: "Coach Desk", href: "/dashboard/coach", icon: <LayoutDashboard className="h-5 w-5" /> },
-          { label: "My Roster", href: "/dashboard/coach/players", icon: <Users className="h-5 w-5" /> },
-          { label: "Practice Sessions", href: "/dashboard/coach/sessions", icon: <CalendarCheck className="h-5 w-5" /> },
-          { label: "Matches & Scores", href: "/dashboard/coach/matches", icon: <Trophy className="h-5 w-5" /> },
-          { label: "Trial Eligibility", href: "/dashboard/coach/eligibility", icon: <Award className="h-5 w-5" /> },
+          { label: "Coach Desk", href: "/coach", icon: <LayoutDashboard className="h-4 w-4" /> },
+          { label: "My Squad", href: "/coach/players", icon: <Users className="h-4 w-4" /> },
+          { label: "Practice & Attendance", href: "/coach/sessions", icon: <CalendarCheck className="h-4 w-4" /> },
+          { label: "Matches & Scores", href: "/coach/matches", icon: <Trophy className="h-4 w-4" /> },
+          { label: "Trial Eligibility", href: "/coach/eligibility", icon: <Award className="h-4 w-4" /> },
         ];
       case "SCOUT":
         return [
-          { label: "Talent Radar (Ready Only)", href: "/dashboard/scout", icon: <Search className="h-5 w-5" /> },
+          { label: "Talent Radar (Ready Only)", href: "/scout", icon: <Search className="h-4 w-4" /> },
         ];
       case "PLAYER":
         return [
-          { label: "My Athlete Portal", href: "/dashboard/player", icon: <LayoutDashboard className="h-5 w-5" /> },
+          { label: "Athlete Portal", href: "/player", icon: <LayoutDashboard className="h-4 w-4" /> },
         ];
       default:
         return [];
@@ -77,37 +76,37 @@ export function DashboardSidebar({ role, academyName }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "relative flex flex-col border-r border-athletic-border bg-athletic-black transition-all duration-300 z-40",
-        collapsed ? "w-20" : "w-64"
+        "relative flex flex-col border-r border-[#DCE1E3] bg-white transition-all duration-200 z-40 select-none",
+        collapsed ? "w-18" : "w-64"
       )}
     >
       {/* Brand Header */}
-      <div className="flex h-20 items-center justify-between px-4 border-b border-athletic-border/70">
-        <Link href="/" className="flex items-center gap-3 overflow-hidden">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-athletic-lime text-athletic-black font-black italic shadow-[0_0_15px_rgba(163,255,0,0.3)]">
-            <Zap className="h-5 w-5 stroke-[3]" />
+      <div className="flex h-18 items-center justify-between px-4 border-b border-[#DCE1E3]">
+        <Link href="/" className="flex items-center gap-2.5 overflow-hidden">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#C6F432] text-[#101820] font-black italic shadow-xs">
+            <Zap className="h-5 w-5 stroke-[2.5]" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-xl font-black italic tracking-tight text-white uppercase">
+              <span className="text-lg font-black italic tracking-tight text-[#101820] uppercase">
                 ATHLIX
               </span>
-              <span className="text-[9px] font-bold tracking-widest text-athletic-lime uppercase -mt-1 truncate max-w-[140px]">
-                {academyName || "TENANT OS"}
+              <span className="text-[9px] font-bold tracking-widest text-[#8B969E] uppercase -mt-1 truncate max-w-[140px]">
+                {academyName || "SPORTS PLATFORM"}
               </span>
             </div>
           )}
         </Link>
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden sm:flex h-7 w-7 items-center justify-center rounded-md border border-athletic-border text-athletic-textMuted hover:text-white hover:bg-athletic-elevated transition-colors"
+          className="hidden sm:flex h-7 w-7 items-center justify-center rounded-md border border-[#DCE1E3] text-[#8B969E] hover:text-[#101820] hover:bg-[#F4F3EE] transition-colors"
         >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
         </button>
       </div>
 
       {/* Navigation items */}
-      <nav className="flex-1 space-y-1.5 p-3 overflow-y-auto">
+      <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -116,10 +115,10 @@ export function DashboardSidebar({ role, academyName }: SidebarProps) {
               href={item.href}
               title={collapsed ? item.label : undefined}
               className={cn(
-                "flex items-center gap-3 px-3 py-3 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-200",
+                "flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all",
                 isActive
-                  ? "bg-athletic-lime text-athletic-black shadow-[0_0_15px_rgba(163,255,0,0.3)]"
-                  : "text-athletic-textMuted hover:text-white hover:bg-athletic-elevated"
+                  ? "bg-[#C6F432] text-[#101820] font-bold shadow-xs"
+                  : "text-[#202A32] hover:text-[#101820] hover:bg-[#F4F3EE]"
               )}
             >
               <div className="shrink-0">{item.icon}</div>
@@ -131,11 +130,11 @@ export function DashboardSidebar({ role, academyName }: SidebarProps) {
 
       {/* Role Footer */}
       {!collapsed && (
-        <div className="p-4 border-t border-athletic-border/50 bg-athletic-charcoal/50">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-athletic-textMuted">
-            Active Role
+        <div className="p-4 border-t border-[#DCE1E3] bg-[#F4F3EE]/60">
+          <div className="text-[9px] font-bold uppercase tracking-widest text-[#8B969E]">
+            Active Workspace
           </div>
-          <div className="text-xs font-black uppercase text-athletic-lime truncate">
+          <div className="text-xs font-black uppercase text-[#101820] truncate">
             {role.replace("_", " ")}
           </div>
         </div>

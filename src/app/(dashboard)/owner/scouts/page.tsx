@@ -148,11 +148,11 @@ export default function ScoutsManagementPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black italic tracking-tight uppercase text-white">
-              DEDICATED SCOUT NETWORK
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+              Dedicated Scout Network
             </h1>
-            <p className="text-xs text-athletic-textMuted uppercase tracking-wider mt-1">
-              ASSIGN TALENT SCOUTS TO HEAD COACHES
+            <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
+              Assign Talent Scouts to Head Coaches
             </p>
           </div>
 
@@ -161,7 +161,7 @@ export default function ScoutsManagementPage() {
             size="sm"
             onClick={() => setIsAddOpen(true)}
             disabled={coaches.length === 0}
-            className="gap-2"
+            className="gap-2 font-bold shadow-sm"
           >
             <Plus className="h-4 w-4" />
             <span>Assign New Scout</span>
@@ -169,23 +169,23 @@ export default function ScoutsManagementPage() {
         </div>
 
         {/* Scouts Table Card */}
-        <Card>
-          <CardHeader className="pb-4 border-b border-athletic-border/70">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Search className="h-5 w-5 text-athletic-lime" />
+        <Card className="border-[#DCE1E3] bg-white shadow-sm">
+          <CardHeader className="pb-4 border-b border-[#DCE1E3]">
+            <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
+              <Search className="h-5 w-5 text-[#101820]" />
               <span>Assigned Scouts Directory ({scouts.length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
-              <div className="py-12 text-center text-xs text-athletic-textMuted">
+              <div className="py-12 text-center text-xs text-[#8B969E]">
                 Loading scouts...
               </div>
             ) : scouts.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-athletic-border/80 bg-athletic-black/50 text-[10px] uppercase font-black tracking-wider text-athletic-textMuted">
+                    <tr className="border-b border-[#DCE1E3] bg-[#F4F3EE] text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
                       <th className="p-4">Scout Name</th>
                       <th className="p-4">Organization / Agency</th>
                       <th className="p-4">Assigned Coach</th>
@@ -194,23 +194,23 @@ export default function ScoutsManagementPage() {
                       <th className="p-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-athletic-border/50">
+                  <tbody className="divide-y divide-[#DCE1E3]">
                     {scouts.map((s) => (
-                      <tr key={s.id} className="hover:bg-athletic-elevated/40 transition-colors">
-                        <td className="p-4 font-bold text-white">
+                      <tr key={s.id} className="hover:bg-[#F4F3EE] transition-colors">
+                        <td className="p-4 font-bold text-[#101820]">
                           <div className="text-sm">{s.name}</div>
-                          <div className="text-[10px] text-athletic-textMuted font-normal">{s.email}</div>
+                          <div className="text-[10px] text-[#8B969E] font-normal">{s.email}</div>
                         </td>
-                        <td className="p-4 text-white font-medium">
+                        <td className="p-4 text-[#101820] font-medium">
                           {s.organization || "Independent Scouting"}
                         </td>
                         <td className="p-4">
-                          <div className="font-bold text-athletic-lime">{s.coachName}</div>
-                          <div className="text-[10px] text-athletic-textMuted uppercase">
+                          <div className="font-bold text-[#101820]">{s.coachName}</div>
+                          <div className="text-[10px] text-[#8B969E] uppercase">
                             {s.coachSport} Head Coach
                           </div>
                         </td>
-                        <td className="p-4 font-semibold text-white">
+                        <td className="p-4 font-semibold text-[#101820]">
                           {s.experienceYears} Years
                         </td>
                         <td className="p-4">
@@ -218,13 +218,13 @@ export default function ScoutsManagementPage() {
                         </td>
                         <td className="p-4 text-right">
                           <Button
-                            variant="secondary"
+                            variant="outline"
                             size="sm"
                             onClick={() => {
                               setReassignScoutItem(s);
                               setNewCoachId(s.assignedCoachId);
                             }}
-                            className="text-xs gap-1.5"
+                            className="text-xs gap-1.5 border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE]"
                           >
                             <RefreshCw className="h-3.5 w-3.5" />
                             <span>Reassign</span>
@@ -236,14 +236,14 @@ export default function ScoutsManagementPage() {
                 </table>
               </div>
             ) : (
-              <div className="py-12 text-center text-xs text-athletic-textMuted space-y-3">
+              <div className="py-12 text-center text-xs text-[#8B969E] space-y-3">
                 <p>No scouts attached to coaching staff yet.</p>
                 {coaches.length > 0 ? (
                   <Button variant="athletic" size="sm" onClick={() => setIsAddOpen(true)}>
                     Assign First Scout
                   </Button>
                 ) : (
-                  <p className="text-[11px] text-amber-400">
+                  <p className="text-[11px] text-amber-600 font-semibold">
                     You must invite at least one coach before assigning scouts.
                   </p>
                 )}
@@ -254,14 +254,14 @@ export default function ScoutsManagementPage() {
 
         {/* Modal: Add Scout */}
         {isAddOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-lg border-athletic-border bg-athletic-charcoal shadow-2xl">
-              <div className="flex items-center justify-between p-6 border-b border-athletic-border/70">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+            <Card className="w-full max-w-lg border-[#DCE1E3] bg-white shadow-xl">
+              <div className="flex items-center justify-between p-6 border-b border-[#DCE1E3]">
                 <div className="flex items-center gap-2">
-                  <Search className="h-5 w-5 text-athletic-lime" />
-                  <h3 className="text-lg font-black uppercase text-white">Assign Dedicated Scout</h3>
+                  <Search className="h-5 w-5 text-[#101820]" />
+                  <h3 className="text-lg font-bold uppercase text-[#101820]">Assign Dedicated Scout</h3>
                 </div>
-                <button onClick={() => setIsAddOpen(false)} className="text-athletic-textMuted hover:text-white">
+                <button onClick={() => setIsAddOpen(false)} className="text-[#8B969E] hover:text-[#101820]">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -285,11 +285,11 @@ export default function ScoutsManagementPage() {
                 />
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-athletic-textMuted">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
                     Assign To Head Coach *
                   </label>
                   <select
-                    className="flex h-11 w-full rounded-md border border-athletic-border bg-athletic-black px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:border-athletic-lime"
+                    className="flex h-11 w-full rounded-md border border-[#DCE1E3] bg-white px-3 py-2 text-sm text-[#101820] focus-visible:outline-none focus-visible:border-[#101820]"
                     value={addForm.assignedCoachId}
                     onChange={(e) => setAddForm({ ...addForm, assignedCoachId: e.target.value })}
                     required
@@ -321,7 +321,7 @@ export default function ScoutsManagementPage() {
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-athletic-border/70">
+                <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
                   <Button type="button" variant="ghost" size="sm" onClick={() => setIsAddOpen(false)}>
                     Cancel
                   </Button>
@@ -336,28 +336,28 @@ export default function ScoutsManagementPage() {
 
         {/* Modal: Reassign Scout */}
         {reassignScoutItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md border-athletic-border bg-athletic-charcoal shadow-2xl">
-              <div className="flex items-center justify-between p-6 border-b border-athletic-border/70">
-                <h3 className="text-base font-black uppercase text-white">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+            <Card className="w-full max-w-md border-[#DCE1E3] bg-white shadow-xl">
+              <div className="flex items-center justify-between p-6 border-b border-[#DCE1E3]">
+                <h3 className="text-base font-bold uppercase text-[#101820]">
                   Reassign Scout: {reassignScoutItem.name}
                 </h3>
-                <button onClick={() => setReassignScoutItem(null)} className="text-athletic-textMuted hover:text-white">
+                <button onClick={() => setReassignScoutItem(null)} className="text-[#8B969E] hover:text-[#101820]">
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               <form onSubmit={handleReassign} className="p-6 space-y-4">
-                <p className="text-xs text-athletic-textMuted">
-                  Transfer this scout to monitor a different coach's roster. The scout will immediately lose access to the previous coach's players and see only the new coach's trial-ready athletes.
+                <p className="text-xs text-[#8B969E]">
+                  Transfer this scout to monitor a different coach&apos;s roster. The scout will immediately lose access to the previous coach&apos;s players and see only the new coach&apos;s trial-ready athletes.
                 </p>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-athletic-textMuted">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
                     Select New Head Coach *
                   </label>
                   <select
-                    className="flex h-11 w-full rounded-md border border-athletic-border bg-athletic-black px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:border-athletic-lime"
+                    className="flex h-11 w-full rounded-md border border-[#DCE1E3] bg-white px-3 py-2 text-sm text-[#101820] focus-visible:outline-none focus-visible:border-[#101820]"
                     value={newCoachId}
                     onChange={(e) => setNewCoachId(e.target.value)}
                     required
@@ -370,7 +370,7 @@ export default function ScoutsManagementPage() {
                   </select>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-athletic-border/70">
+                <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
                   <Button type="button" variant="ghost" size="sm" onClick={() => setReassignScoutItem(null)}>
                     Cancel
                   </Button>

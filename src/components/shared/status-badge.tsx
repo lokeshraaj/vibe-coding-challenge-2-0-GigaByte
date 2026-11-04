@@ -13,7 +13,7 @@ export function StatusBadge({ status, type = "general" }: StatusBadgeProps) {
     if (s === "READY") {
       return (
         <Badge variant="neon" className="flex items-center gap-1.5 py-1 px-3">
-          <Award className="h-3.5 w-3.5 text-athletic-lime" />
+          <Award className="h-3.5 w-3.5 text-[#101820]" />
           <span>TRIAL READY</span>
         </Badge>
       );
@@ -30,14 +30,14 @@ export function StatusBadge({ status, type = "general" }: StatusBadgeProps) {
     if (s === "PRESENT") {
       return (
         <Badge variant="success" className="flex items-center gap-1 py-0.5 px-2.5">
-          <CheckCircle2 className="h-3 w-3" />
+          <CheckCircle2 className="h-3 w-3 text-emerald-600" />
           <span>PRESENT</span>
         </Badge>
       );
     }
     return (
       <Badge variant="destructive" className="flex items-center gap-1 py-0.5 px-2.5">
-        <XCircle className="h-3 w-3" />
+        <XCircle className="h-3 w-3 text-rose-600" />
         <span>ABSENT</span>
       </Badge>
     );

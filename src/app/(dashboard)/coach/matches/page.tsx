@@ -223,36 +223,36 @@ export default function CoachMatchesPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black italic tracking-tight uppercase text-white">
-              MATCH PERFORMANCE & SCORES
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+              Match Performance & Scores
             </h1>
-            <p className="text-xs text-athletic-textMuted uppercase tracking-wider mt-1">
-              RECORD FIXTURES WITH SESSION-LOCKED VERIFICATION
+            <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
+              Record Fixtures With Session-Locked Verification
             </p>
           </div>
 
-          <Button variant="athletic" size="sm" onClick={handleOpenModal} className="gap-2">
+          <Button variant="athletic" size="sm" onClick={handleOpenModal} className="gap-2 font-bold shadow-sm">
             <Plus className="h-4 w-4" />
             <span>Record New Match</span>
           </Button>
         </div>
 
         {/* Matches List */}
-        <Card>
-          <CardHeader className="pb-4 border-b border-athletic-border/70">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-athletic-lime" />
+        <Card className="border-[#DCE1E3] bg-white shadow-sm">
+          <CardHeader className="pb-4 border-b border-[#DCE1E3]">
+            <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
+              <Trophy className="h-5 w-5 text-[#101820]" />
               <span>Match Records ({matches.length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
-              <div className="py-12 text-center text-xs text-athletic-textMuted">Loading matches...</div>
+              <div className="py-12 text-center text-xs text-[#8B969E]">Loading matches...</div>
             ) : matches.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-athletic-border/80 bg-athletic-black/50 text-[10px] uppercase font-black tracking-wider text-athletic-textMuted">
+                    <tr className="border-b border-[#DCE1E3] bg-[#F4F3EE] text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
                       <th className="p-4">Match Date</th>
                       <th className="p-4">Opponent & Sport</th>
                       <th className="p-4">Score Sheet</th>
@@ -261,22 +261,22 @@ export default function CoachMatchesPage() {
                       <th className="p-4">Result</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-athletic-border/50">
+                  <tbody className="divide-y divide-[#DCE1E3]">
                     {matches.map((m) => (
-                      <tr key={m.id} className="hover:bg-athletic-elevated/40 transition-colors">
-                        <td className="p-4 font-bold text-white">
+                      <tr key={m.id} className="hover:bg-[#F4F3EE] transition-colors">
+                        <td className="p-4 font-bold text-[#101820]">
                           <div>{new Date(m.date).toLocaleDateString()}</div>
-                          <div className="text-[10px] text-athletic-textMuted font-normal">{m.venue || "Stadium"}</div>
+                          <div className="text-[10px] text-[#8B969E] font-normal">{m.venue || "Stadium"}</div>
                         </td>
                         <td className="p-4">
-                          <div className="font-bold text-white text-sm">vs {m.opponentName}</div>
-                          <div className="text-[10px] text-athletic-textMuted uppercase font-medium">{m.sport}</div>
+                          <div className="font-bold text-[#101820] text-sm">vs {m.opponentName}</div>
+                          <div className="text-[10px] text-[#8B969E] uppercase font-medium">{m.sport}</div>
                         </td>
                         <td className="p-4">
-                          <span className="text-base font-black italic text-athletic-lime">
+                          <span className="text-base font-extrabold text-[#101820]">
                             {m.academyTeamScore} - {m.opponentScore}
                           </span>
-                          <span className="text-[10px] text-athletic-textMuted ml-1.5 uppercase">
+                          <span className="text-[10px] text-[#8B969E] ml-1.5 uppercase font-medium">
                             ({m.scoreLabel})
                           </span>
                         </td>
@@ -284,16 +284,16 @@ export default function CoachMatchesPage() {
                           {m.topScorers && m.topScorers.length > 0 ? (
                             <div className="space-y-0.5">
                               {m.topScorers.map((s, idx) => (
-                                <div key={idx} className="text-[11px] font-semibold text-white">
-                                  {s.name}: <span className="text-athletic-lime">{s.score}</span>
+                                <div key={idx} className="text-[11px] font-semibold text-[#101820]">
+                                  {s.name}: <span className="font-bold text-[#101820]">{s.score}</span>
                                 </div>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-neutral-500 text-[10px]">No scorers</span>
+                            <span className="text-[#8B969E] text-[10px]">No scorers</span>
                           )}
                         </td>
-                        <td className="p-4 font-bold text-white">
+                        <td className="p-4 font-bold text-[#101820]">
                           {m.participantsCount} Players
                         </td>
                         <td className="p-4">
@@ -305,7 +305,7 @@ export default function CoachMatchesPage() {
                 </table>
               </div>
             ) : (
-              <div className="py-12 text-center text-xs text-athletic-textMuted space-y-3">
+              <div className="py-12 text-center text-xs text-[#8B969E] space-y-3">
                 <p>No matches recorded yet.</p>
                 <Button variant="athletic" size="sm" onClick={handleOpenModal}>
                   Record First Match
@@ -317,28 +317,28 @@ export default function CoachMatchesPage() {
 
         {/* Modal: Record Match */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-            <Card className="w-full max-w-2xl border-athletic-border bg-athletic-charcoal shadow-2xl my-8">
-              <div className="flex items-center justify-between p-6 border-b border-athletic-border/70">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
+            <Card className="w-full max-w-2xl border-[#DCE1E3] bg-white shadow-xl my-8">
+              <div className="flex items-center justify-between p-6 border-b border-[#DCE1E3]">
                 <div className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-athletic-lime" />
-                  <h3 className="text-lg font-black uppercase text-white">Record Match Performance</h3>
+                  <Trophy className="h-5 w-5 text-[#101820]" />
+                  <h3 className="text-lg font-bold uppercase text-[#101820]">Record Match Performance</h3>
                 </div>
-                <button onClick={() => setIsModalOpen(false)} className="text-athletic-textMuted hover:text-white">
+                <button onClick={() => setIsModalOpen(false)} className="text-[#8B969E] hover:text-[#101820]">
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               <form onSubmit={handleCreateMatch} className="p-6 space-y-5">
                 {/* Linked Closed Session Selection */}
-                <div className="p-4 rounded-lg bg-athletic-black border border-athletic-border space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-athletic-lime flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4" />
+                <div className="p-4 rounded-xl bg-[#F4F3EE] border border-[#DCE1E3] space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#101820]" />
                     <span>Link to Closed Practice Session *</span>
                   </label>
                   {closedSessions.length > 0 ? (
                     <select
-                      className="flex h-11 w-full rounded-md border border-athletic-border bg-athletic-charcoal px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:border-athletic-lime"
+                      className="flex h-11 w-full rounded-md border border-[#DCE1E3] bg-white px-3 py-2 text-sm text-[#101820] focus-visible:outline-none focus-visible:border-[#101820]"
                       value={matchForm.sessionId}
                       onChange={handleSessionChange}
                       required
@@ -350,15 +350,15 @@ export default function CoachMatchesPage() {
                       ))}
                     </select>
                   ) : (
-                    <div className="text-xs text-amber-400 flex items-center gap-2 p-2 bg-amber-950/40 rounded border border-amber-900/50">
+                    <div className="text-xs text-amber-700 font-semibold flex items-center gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
                       <AlertCircle className="h-4 w-4 shrink-0" />
                       <span>
-                        No closed sessions found! You must conduct and CLOSE a practice session before recording a match.
+                        No closed sessions found! You must conduct and close a practice session before recording a match.
                       </span>
                     </div>
                   )}
-                  <p className="text-[10px] text-athletic-textMuted">
-                    System invariant: Only athletes marked PRESENT in this closed session will be eligible for the match sheet.
+                  <p className="text-[11px] text-[#8B969E]">
+                    System rule: Only athletes marked Present in this closed session will be eligible for the match sheet.
                   </p>
                 </div>
 
@@ -403,11 +403,11 @@ export default function CoachMatchesPage() {
                   />
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-athletic-textMuted">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
                       Outcome *
                     </label>
                     <select
-                      className="flex h-11 w-full rounded-md border border-athletic-border bg-athletic-black px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:border-athletic-lime"
+                      className="flex h-11 w-full rounded-md border border-[#DCE1E3] bg-white px-3 py-2 text-sm text-[#101820] focus-visible:outline-none focus-visible:border-[#101820]"
                       value={matchForm.result}
                       onChange={(e) => setMatchForm({ ...matchForm, result: e.target.value as any })}
                     >
@@ -419,22 +419,22 @@ export default function CoachMatchesPage() {
                 </div>
 
                 {/* Eligible Player Roster Participation */}
-                <div className="space-y-2 pt-2 border-t border-athletic-border/70">
+                <div className="space-y-2 pt-2 border-t border-[#DCE1E3]">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-black uppercase tracking-wider text-white">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#101820]">
                       Fielded Players & Scores ({selectedParticipants.size} Selected)
                     </label>
-                    <span className="text-[10px] text-athletic-lime font-bold uppercase">
+                    <span className="text-[10px] text-[#101820] font-bold uppercase bg-[#F4F3EE] px-2 py-0.5 rounded border border-[#DCE1E3]">
                       Present in Session Only
                     </span>
                   </div>
 
                   {loadingEligible ? (
-                    <div className="py-6 text-center text-xs text-athletic-textMuted">
+                    <div className="py-6 text-center text-xs text-[#8B969E]">
                       Verifying session attendance...
                     </div>
                   ) : eligiblePlayers.length > 0 ? (
-                    <div className="max-h-56 overflow-y-auto divide-y divide-athletic-border/50 border border-athletic-border rounded-lg bg-athletic-black">
+                    <div className="max-h-56 overflow-y-auto divide-y divide-[#DCE1E3] border border-[#DCE1E3] rounded-xl bg-white">
                       {eligiblePlayers.map((player) => {
                         const isSelected = selectedParticipants.has(player.playerId);
                         const participantData = selectedParticipants.get(player.playerId) || {
@@ -445,18 +445,18 @@ export default function CoachMatchesPage() {
                         return (
                           <div
                             key={player.playerId}
-                            className="flex items-center justify-between p-3 text-xs hover:bg-athletic-elevated/40 transition-colors"
+                            className="flex items-center justify-between p-3 text-xs hover:bg-[#F4F3EE] transition-colors"
                           >
                             <div className="flex items-center gap-3">
                               <input
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={() => handleTogglePlayer(player.playerId)}
-                                className="h-4 w-4 rounded border-athletic-border bg-athletic-charcoal text-athletic-lime focus:ring-athletic-lime"
+                                className="h-4 w-4 rounded border-[#DCE1E3] text-[#101820] focus:ring-[#C6F432]"
                               />
                               <div>
-                                <div className="font-bold text-white">{player.name}</div>
-                                <div className="text-[10px] text-athletic-textMuted">
+                                <div className="font-bold text-[#101820]">{player.name}</div>
+                                <div className="text-[10px] text-[#8B969E]">
                                   {player.playerCode} • {player.position}
                                 </div>
                               </div>
@@ -464,7 +464,7 @@ export default function CoachMatchesPage() {
 
                             {isSelected && (
                               <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-athletic-textMuted uppercase font-bold">
+                                <span className="text-[10px] text-[#8B969E] uppercase font-bold">
                                   Score:
                                 </span>
                                 <input
@@ -477,7 +477,7 @@ export default function CoachMatchesPage() {
                                       parseInt(e.target.value, 10) || 0
                                     )
                                   }
-                                  className="h-8 w-16 rounded border border-athletic-border bg-athletic-charcoal px-2 text-center text-white font-black"
+                                  className="h-8 w-16 rounded border border-[#DCE1E3] bg-[#F4F3EE] px-2 text-center text-[#101820] font-bold"
                                 />
                               </div>
                             )}
@@ -486,13 +486,13 @@ export default function CoachMatchesPage() {
                       })}
                     </div>
                   ) : (
-                    <div className="p-4 text-center text-xs text-amber-400 bg-amber-950/20 border border-amber-900/40 rounded-lg">
+                    <div className="p-4 text-center text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg">
                       No present players found in this session.
                     </div>
                   )}
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-athletic-border/70">
+                <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
                   <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
                     Cancel
                   </Button>
