@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardSidebar } from "@/components/shared/dashboard-sidebar";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
-import { FootballLoading } from "@/components/shared/football-loading";
 import { UserRole } from "@/types";
 
 interface SessionUser {
@@ -72,7 +71,12 @@ export function DashboardShell({ children, allowedRoles }: DashboardShellProps) 
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[#F4F3EE]">
-        <FootballLoading size="md" text="CONNECTING ATHLIX SECURE WORKSPACE..." />
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#DCE1E3] border-t-[#101820]" />
+          <span className="text-[11px] font-bold uppercase tracking-widest text-[#8B969E]">
+            Loading Workspace...
+          </span>
+        </div>
       </div>
     );
   }

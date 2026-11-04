@@ -7,7 +7,6 @@ import { Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { FootballLoading } from "@/components/shared/football-loading";
 import { toast } from "sonner";
 import { signIn } from "next-auth/react";
 
@@ -121,7 +120,12 @@ function LoginForm() {
   if (checkingSession) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center bg-[#F4F3EE]">
-        <FootballLoading size="md" text="CHECKING SESSION..." />
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#DCE1E3] border-t-[#101820]" />
+          <span className="text-[11px] font-bold uppercase tracking-widest text-[#8B969E]">
+            Checking Session...
+          </span>
+        </div>
       </div>
     );
   }
@@ -297,7 +301,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen w-full items-center justify-center bg-[#F4F3EE]">
-          <FootballLoading size="md" text="INITIALIZING ATHLIX..." />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#DCE1E3] border-t-[#101820]" />
         </div>
       }
     >
