@@ -24,7 +24,7 @@ const UserSchema = new Schema<IUserDocument>(
     academyId: { type: Schema.Types.ObjectId, ref: "Academy", default: null },
     role: {
       type: String,
-      enum: ["PLATFORM_ADMIN", "ACADEMY_OWNER", "COACH", "SCOUT", "PLAYER"],
+      enum: ["PLATFORM_ADMIN", "SUPER_ADMIN", "ACADEMY_OWNER", "COACH", "SCOUT", "PLAYER"],
       required: true,
     },
     name: { type: String, required: true, trim: true },
@@ -32,7 +32,7 @@ const UserSchema = new Schema<IUserDocument>(
     passwordHash: { type: String, select: false },
     status: {
       type: String,
-      enum: ["ACTIVE", "INVITED", "DEACTIVATED"],
+      enum: ["ACTIVE", "PENDING", "INVITED", "DEACTIVATED"],
       default: "ACTIVE",
     },
     coachId: { type: Schema.Types.ObjectId, ref: "Coach", default: null },

@@ -85,7 +85,13 @@ export async function requireRole(
 ): Promise<AuthSessionPayload> {
   const session = await requireAuth(req);
 
-  if (!allowedRoles.includes(session.role)) {
+  const allowedSet = new Set<string>(allowedRoles);
+  if (allowedSet.has("PLATFORM_ADMIN") || allowedSet.has("SUPER_ADMIN")) {
+    allowedSet.add("PLATFORM_ADMIN");
+    allowedSet.add("SUPER_ADMIN");
+  }
+
+  if (!allowedSet.has(session.role)) {
     throw new ForbiddenError(
       `Access denied. Role '${session.role}' is not authorized for this action.`
     );
@@ -104,7 +110,7 @@ export async function requireAcademyAccess(
 ): Promise<AuthSessionPayload> {
   const session = await requireAuth(req);
 
-  if (session.role === "PLATFORM_ADMIN") {
+  if (session.role === "PLATFORM_ADMIN" || session.role === "SUPER_ADMIN") {
     return session;
   }
 
@@ -131,7 +137,7 @@ export async function requireCoachAccess(
 ): Promise<AuthSessionPayload> {
   const session = await requireAuth(req);
 
-  if (session.role === "PLATFORM_ADMIN") {
+  if (session.role === "PLATFORM_ADMIN" || session.role === "SUPER_ADMIN") {
     return session;
   }
 
@@ -162,7 +168,11 @@ export async function requireScoutAccess(
 ): Promise<AuthSessionPayload> {
   const session = await requireAuth(req);
 
-  if (session.role === "PLATFORM_ADMIN" || session.role === "ACADEMY_OWNER") {
+  if (
+    session.role === "PLATFORM_ADMIN" ||
+    session.role === "SUPER_ADMIN" ||
+    session.role === "ACADEMY_OWNER"
+  ) {
     return session;
   }
 

@@ -1,3 +1,5 @@
+import { ZodError } from "zod";
+
 export class AppError extends Error {
   public statusCode: number;
   public details?: unknown;
@@ -49,6 +51,18 @@ export class TenantIsolationError extends AppError {
 
 export function handleApiError(error: unknown): { status: number; body: { success: false; error: string; details?: unknown } } {
   console.error("[API Error Handler]", error);
+
+  if (error instanceof ZodError) {
+    const errorMessages = error.issues.map((issue) => issue.message).join(". ");
+    return {
+      status: 400,
+      body: {
+        success: false,
+        error: errorMessages,
+        details: error.issues,
+      },
+    };
+  }
 
   if (error instanceof AppError) {
     return {

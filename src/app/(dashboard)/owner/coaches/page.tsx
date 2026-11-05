@@ -6,16 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { UserCheck, Plus, X } from "lucide-react";
+import { UserCheck, Plus, X, Copy, Mail, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface CoachItem {
   id: string;
+  coachCode?: string;
   name: string;
   email: string;
+  phone?: string;
   sport: string;
   specialization: string;
   experienceYears: number;
+  accountStatus: string;
   status: string;
   playerCount: number;
   assignedScout?: {
@@ -31,10 +34,13 @@ export default function CoachesManagementPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     sport: "Football",
     specialization: "",
     experienceYears: 3,
@@ -76,11 +82,14 @@ export default function CoachesManagementPage() {
         throw new Error(data.error || "Failed to create coach");
       }
 
-      toast.success(`Coach ${formData.name} invited successfully!`);
+      toast.success(
+        `Coach created with ID: ${data.coach.coachCode}! Informational notice dispatched via Brevo.`
+      );
       setIsModalOpen(false);
       setFormData({
         name: "",
         email: "",
+        phone: "",
         sport: "Football",
         specialization: "",
         experienceYears: 3,
@@ -91,6 +100,29 @@ export default function CoachesManagementPage() {
       toast.error(err instanceof Error ? err.message : "Error creating coach");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleCopyId = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedId(code);
+    toast.info(`Copied Coach ID: ${code}`);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleResendNotice = async (coachId: string) => {
+    setResendingId(coachId);
+    try {
+      const res = await fetch(`/api/coaches/${coachId}/resend-notification`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to resend notice");
+      toast.success(data.message || "Notification email re-sent successfully via Brevo");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not resend email");
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -137,20 +169,48 @@ export default function CoachesManagementPage() {
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-[#DCE1E3] bg-[#F4F3EE] text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
-                      <th className="p-4">Coach Name</th>
+                      <th className="p-4">Coach ID</th>
+                      <th className="p-4">Coach Details</th>
                       <th className="p-4">Sport & Spec</th>
                       <th className="p-4">Experience</th>
-                      <th className="p-4">Assigned Players</th>
+                      <th className="p-4">Players</th>
                       <th className="p-4">Dedicated Scout</th>
-                      <th className="p-4">Status</th>
+                      <th className="p-4">Activation Status</th>
+                      <th className="p-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#DCE1E3]">
                     {coaches.map((c) => (
                       <tr key={c.id} className="hover:bg-[#F4F3EE] transition-colors">
+                        <td className="p-4">
+                          {c.coachCode ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono bg-[#FAF9F5] border border-[#DCE1E3] px-2 py-0.5 rounded text-xs font-bold text-[#101820]">
+                                {c.coachCode}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyId(c.coachCode!)}
+                                className="text-[#8B969E] hover:text-[#101820] p-1"
+                                title="Copy Coach ID"
+                              >
+                                {copiedId === c.coachCode ? (
+                                  <Check className="h-3 w-3 text-emerald-600" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-[#8B969E]">Legacy</span>
+                          )}
+                        </td>
                         <td className="p-4 font-bold text-[#101820]">
                           <div className="text-sm">{c.name}</div>
                           <div className="text-[10px] text-[#8B969E] font-normal">{c.email}</div>
+                          {c.phone && (
+                            <div className="text-[10px] text-[#8B969E] font-normal">{c.phone}</div>
+                          )}
                         </td>
                         <td className="p-4">
                           <div className="font-bold text-[#101820] uppercase">{c.sport}</div>
@@ -175,7 +235,30 @@ export default function CoachesManagementPage() {
                           )}
                         </td>
                         <td className="p-4">
-                          <StatusBadge status={c.status} />
+                          {c.accountStatus === "PENDING" ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wider">
+                              Pending OTP
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+                              Active
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4 text-right">
+                          {c.accountStatus === "PENDING" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleResendNotice(c.id)}
+                              disabled={resendingId === c.id}
+                              className="text-xs font-semibold gap-1 text-[#101820]"
+                              title="Resend notification email with Coach ID"
+                            >
+                              <Mail className={`h-3.5 w-3.5 ${resendingId === c.id ? "animate-spin" : ""}`} />
+                              <span>{resendingId === c.id ? "Sending..." : "Resend"}</span>
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -219,14 +302,24 @@ export default function CoachesManagementPage() {
                   required
                 />
 
-                <Input
-                  label="Coach Email Address *"
-                  type="email"
-                  placeholder="coach.cole@academy.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="Coach Email Address *"
+                    type="email"
+                    placeholder="coach.cole@academy.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+
+                  <Input
+                    label="Phone Number"
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -244,6 +337,8 @@ export default function CoachesManagementPage() {
                       <option value="Tennis">Tennis</option>
                       <option value="Hockey">Hockey</option>
                       <option value="Athletics">Athletics</option>
+                      <option value="Badminton">Badminton</option>
+                      <option value="Swimming">Swimming</option>
                     </select>
                   </div>
 
@@ -266,6 +361,13 @@ export default function CoachesManagementPage() {
                   onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                 />
 
+                <div className="rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] p-3 text-[11px] text-[#202A32] space-y-1">
+                  <strong>Automated Onboarding:</strong>
+                  <div>
+                    A unique Coach ID (e.g. <code>DCOFO001</code>) will be generated and saved. An informational notice will be sent to the coach via Brevo informing them of their Coach ID and registration instructions.
+                  </div>
+                </div>
+
                 <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
                   <Button
                     type="button"
@@ -281,7 +383,7 @@ export default function CoachesManagementPage() {
                     size="sm"
                     isLoading={submitting}
                   >
-                    Send Invitation
+                    Provision & Send Notice
                   </Button>
                 </div>
               </form>

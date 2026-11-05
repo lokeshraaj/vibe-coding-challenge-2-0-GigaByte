@@ -19,7 +19,9 @@ export interface IPlayerDocument extends Document {
     emergencyContactName?: string;
     emergencyContactPhone?: string;
   };
+  accountStatus: "PENDING" | "ACTIVE" | "INACTIVE";
   status: PlayerStatus;
+  activatedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,7 +31,7 @@ const PlayerSchema = new Schema<IPlayerDocument>(
     academyId: { type: Schema.Types.ObjectId, ref: "Academy", required: true },
     coachId: { type: Schema.Types.ObjectId, ref: "Coach", required: true },
     userId: { type: Schema.Types.ObjectId, ref: "User", default: null },
-    playerCode: { type: String, required: true, trim: true },
+    playerCode: { type: String, required: true, trim: true, uppercase: true },
     name: { type: String, required: true, trim: true },
     dateOfBirth: { type: Date, required: true },
     gender: {
@@ -47,21 +49,27 @@ const PlayerSchema = new Schema<IPlayerDocument>(
       emergencyContactName: { type: String, default: "" },
       emergencyContactPhone: { type: String, default: "" },
     },
+    accountStatus: {
+      type: String,
+      enum: ["PENDING", "ACTIVE", "INACTIVE"],
+      default: "PENDING",
+    },
     status: {
       type: String,
       enum: ["ACTIVE", "INJURED", "DEACTIVATED"],
       default: "ACTIVE",
     },
+    activatedAt: { type: Date, default: null },
   },
   {
     timestamps: true,
   }
 );
 
+PlayerSchema.index({ academyId: 1, coachId: 1 });
 PlayerSchema.index({ academyId: 1, playerCode: 1 }, { unique: true });
-PlayerSchema.index({ academyId: 1, coachId: 1, status: 1 });
-PlayerSchema.index({ academyId: 1, sport: 1 });
-PlayerSchema.index({ userId: 1 });
+PlayerSchema.index({ playerCode: 1 });
+PlayerSchema.index({ "contact.email": 1 });
 
 export const Player: Model<IPlayerDocument> =
   mongoose.models.Player || mongoose.model<IPlayerDocument>("Player", PlayerSchema);

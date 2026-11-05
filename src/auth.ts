@@ -3,8 +3,7 @@ import Google from "next-auth/providers/google";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import clientPromise from "@/lib/db/mongodb-client";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { User, Coach, Scout, Invitation, Player } from "@/models";
-import { AuthSessionPayload, UserRole } from "@/types";
+import { User, Coach, Scout, Player, Account } from "@/models";
 
 const providers = [];
 
@@ -27,87 +26,72 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     error: "/login",
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (!user.email) return false;
       const normalizedEmail = user.email.toLowerCase().trim();
 
       await connectToDatabase();
 
-      // Look up existing user
+      // Look up existing ATHLIX user account
       let existingUser = await User.findOne({ email: normalizedEmail });
 
-      if (existingUser) {
-        if (existingUser.status === "DEACTIVATED") {
-          return false;
+      // Rule: Unregistered accounts are NEVER automatically created or promoted.
+      // Super Admin accounts can only be provisioned through server-side CLI.
+      if (!existingUser) {
+        console.warn(`[Google Auth Rejected] No authorized ATHLIX account found for email: ${normalizedEmail}`);
+        return false;
+      }
+
+      // Rule 5 & 6: Pending Coach and Player accounts CANNOT use Google Sign-In until activated via ID + OTP
+      if (existingUser.status === "PENDING") {
+        console.warn(`[Google Auth Blocked] Account ${normalizedEmail} is pending activation via ATHLIX ID`);
+        return false;
+      }
+
+      // Deactivated accounts cannot sign in
+      if (existingUser.status === "DEACTIVATED") {
+        return false;
+      }
+
+      // Rule 8: Ensure secure Google account link without altering tenant/role
+      if (account && account.provider === "google") {
+        try {
+          const existingAccount = await Account.findOne({
+            provider: "google",
+            providerAccountId: account.providerAccountId,
+          });
+
+          if (!existingAccount) {
+            await Account.create({
+              userId: existingUser._id,
+              type: account.type || "oauth",
+              provider: "google",
+              providerAccountId: account.providerAccountId,
+              access_token: account.access_token,
+              expires_at: account.expires_at,
+              id_token: account.id_token,
+              scope: account.scope,
+              token_type: account.token_type,
+            });
+          }
+        } catch (accErr) {
+          console.warn("[Account Link Warning]", accErr);
         }
-
-        // Update avatar if available
-        if (user.image && (!existingUser.metadata || !existingUser.metadata.avatarUrl)) {
-          existingUser.metadata = {
-            ...existingUser.metadata,
-            avatarUrl: user.image,
-          };
-          await existingUser.save();
-        }
-        return true;
       }
 
-      // New Google User: Strictly enforce server-side role resolution rules!
-      // Check if this email is the configured platform super admin
-      const initialAdminEmail = process.env.INITIAL_SUPER_ADMIN_EMAIL?.toLowerCase().trim();
-      if (initialAdminEmail && normalizedEmail === initialAdminEmail) {
-        await User.create({
-          name: user.name || "Platform Super Admin",
-          email: normalizedEmail,
-          role: "PLATFORM_ADMIN",
-          status: "ACTIVE",
-          metadata: {
-            avatarUrl: user.image || "",
-          },
-        });
-        return true;
+      // Update avatar if not yet set
+      if (user.image && (!existingUser.metadata || !existingUser.metadata.avatarUrl)) {
+        existingUser.metadata = {
+          ...existingUser.metadata,
+          avatarUrl: user.image,
+        };
+        await existingUser.save();
       }
-
-      // Check if email has a pending invitation
-      const invitation = await Invitation.findOne({
-        email: normalizedEmail,
-        status: "PENDING",
-        expiresAt: { $gt: new Date() },
-      });
-
-      if (invitation) {
-        const newUser = await User.create({
-          academyId: invitation.academyId,
-          role: invitation.role,
-          name: user.name || "Athlix Member",
-          email: normalizedEmail,
-          status: "ACTIVE",
-          coachId: invitation.coachId || null,
-          metadata: { avatarUrl: user.image || "" },
-        });
-
-        invitation.status = "ACCEPTED";
-        await invitation.save();
-        return true;
-      }
-
-      // Default for unknown Google accounts: Create unprivileged user.
-      // Must not automatically receive ACADEMY_OWNER or PLATFORM_ADMIN!
-      await User.create({
-        name: user.name || "Athlix User",
-        email: normalizedEmail,
-        role: "PLAYER", // Default unprivileged base role
-        status: "ACTIVE",
-        academyId: null, // No academy access granted by default!
-        metadata: {
-          avatarUrl: user.image || "",
-        },
-      });
 
       return true;
     },
 
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       if (token.email) {
         await connectToDatabase();
         const dbUser = await User.findOne({ email: token.email.toLowerCase().trim() });

@@ -36,6 +36,7 @@ export function DashboardSidebar({ role, academyName }: SidebarProps) {
   const getNavItems = (): NavItem[] => {
     switch (role) {
       case "PLATFORM_ADMIN":
+      case "SUPER_ADMIN":
         return [
           { label: "Platform Overview", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" /> },
           { label: "Academies Directory", href: "/admin", icon: <Building2 className="h-4 w-4" /> },

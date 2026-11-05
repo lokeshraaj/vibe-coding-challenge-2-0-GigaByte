@@ -1,3 +1,4 @@
+import "./dns-init";
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/athlix_dev";
@@ -30,8 +31,9 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     const opts = {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 8000,
       socketTimeoutMS: 45000,
+      dbName: process.env.MONGODB_DB || "athlix_dev",
     };
 
     cached.promise = mongoose

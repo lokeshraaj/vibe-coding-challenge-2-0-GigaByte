@@ -39,10 +39,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validatedData = coachInviteSchema.parse(body);
 
-    const coach = await createCoach({
-      academyId,
-      ...validatedData,
-    });
+    const coach = await createCoach(
+      {
+        academyId,
+        ...validatedData,
+      },
+      session.userId
+    );
 
     return NextResponse.json({ success: true, coach }, { status: 201 });
   } catch (error) {

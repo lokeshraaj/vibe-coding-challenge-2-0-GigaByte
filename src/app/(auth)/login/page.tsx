@@ -27,7 +27,7 @@ function LoginForm() {
           const data = await res.json();
           if (data?.user) {
             const role = data.user.role;
-            if (role === "PLATFORM_ADMIN") router.push("/admin");
+            if (role === "PLATFORM_ADMIN" || role === "SUPER_ADMIN") router.push("/admin");
             else if (role === "ACADEMY_OWNER") router.push("/owner");
             else if (role === "COACH") router.push("/coach");
             else if (role === "SCOUT") router.push("/scout");
@@ -49,7 +49,7 @@ function LoginForm() {
       if (errorParam === "OAuthSignin" || errorParam === "OAuthCallback") {
         toast.error("Google authentication failed. Please verify OAuth credentials.");
       } else if (errorParam === "AccessDenied") {
-        toast.error("Access denied. Your account may be deactivated.");
+        toast.error("Access denied. Only registered, activated accounts can use Google Sign-In. Pending accounts must register with their assigned ID first.");
       } else {
         toast.error(`Authentication error: ${errorParam}`);
       }
@@ -94,7 +94,7 @@ function LoginForm() {
 
       // Role-based routing
       const role = data.data.user.role;
-      if (role === "PLATFORM_ADMIN") router.push("/admin");
+      if (role === "PLATFORM_ADMIN" || role === "SUPER_ADMIN") router.push("/admin");
       else if (role === "ACADEMY_OWNER") router.push("/owner");
       else if (role === "COACH") router.push("/coach");
       else if (role === "SCOUT") router.push("/scout");
@@ -201,9 +201,9 @@ function LoginForm() {
           <form onSubmit={handleEmailSubmit} className="space-y-4">
             <Input
               id="email"
-              label="Email Address"
-              type="email"
-              placeholder="coach@academy.com"
+              label="Email Address or ATHLIX ID"
+              type="text"
+              placeholder="e.g. coach@apex.com or DCOFO001"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -229,6 +229,37 @@ function LoginForm() {
               Sign In to Athlix
             </Button>
           </form>
+
+          {/* Registration Options */}
+          <div className="pt-3 border-t border-[#DCE1E3] space-y-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#8B969E] block text-center">
+              New to ATHLIX? Complete Your Activation
+            </span>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <Link
+                href="/register/coach"
+                className="p-2.5 rounded-lg bg-[#FAF9F5] border border-[#DCE1E3] text-center hover:border-[#101820] hover:bg-[#F4F3EE] transition-colors"
+              >
+                <div className="font-bold text-[#101820]">Register Coach</div>
+                <div className="text-[10px] text-[#8B969E]">Using Coach ID</div>
+              </Link>
+              <Link
+                href="/register/player"
+                className="p-2.5 rounded-lg bg-[#FAF9F5] border border-[#DCE1E3] text-center hover:border-[#101820] hover:bg-[#F4F3EE] transition-colors"
+              >
+                <div className="font-bold text-[#101820]">Register Athlete</div>
+                <div className="text-[10px] text-[#8B969E]">Using Player ID</div>
+              </Link>
+            </div>
+            <div className="text-center pt-1">
+              <Link
+                href="/register-academy"
+                className="text-xs font-bold text-[#101820] hover:underline uppercase tracking-wider"
+              >
+                + Register New Sports Academy
+              </Link>
+            </div>
+          </div>
 
           {/* Quick Fill Demo Roles */}
           <div className="pt-4 border-t border-[#DCE1E3] space-y-2.5">

@@ -1,4 +1,4 @@
-import { User, Coach, Scout } from "@/models";
+import { User, Coach, Scout, Player } from "@/models";
 import { verifyPassword } from "@/lib/auth/password";
 import { signSessionToken } from "@/lib/auth/jwt";
 import { UnauthorizedError } from "@/lib/errors";
@@ -13,11 +13,34 @@ export async function loginUser(input: LoginInput): Promise<{
   token: string;
   payload: AuthSessionPayload;
 }> {
-  const normalizedEmail = input.email.trim().toLowerCase();
+  const rawIdentifier = (input.email || "").trim();
+  let user = null;
 
-  const user = await User.findOne({ email: normalizedEmail }).select("+passwordHash");
+  if (rawIdentifier.includes("@")) {
+    user = await User.findOne({ email: rawIdentifier.toLowerCase() }).select("+passwordHash");
+  } else {
+    const cleanId = rawIdentifier.toUpperCase();
+    // 1. Check if ATHLIX Coach ID
+    const coach = await Coach.findOne({ coachCode: cleanId });
+    if (coach && coach.userId) {
+      user = await User.findById(coach.userId).select("+passwordHash");
+    } else {
+      // 2. Check if ATHLIX Player ID
+      const player = await Player.findOne({ playerCode: cleanId });
+      if (player && player.userId) {
+        user = await User.findById(player.userId).select("+passwordHash");
+      }
+    }
+  }
+
   if (!user || !user.passwordHash) {
-    throw new UnauthorizedError("Invalid email or password");
+    throw new UnauthorizedError("Invalid credentials. Please verify your email / ATHLIX ID and password.");
+  }
+
+  if (user.status === "PENDING") {
+    throw new UnauthorizedError(
+      "Your account is pending activation. Please complete registration using your assigned Coach ID or Player ID."
+    );
   }
 
   if (user.status === "DEACTIVATED") {
@@ -26,7 +49,7 @@ export async function loginUser(input: LoginInput): Promise<{
 
   const isPasswordValid = await verifyPassword(input.password, user.passwordHash);
   if (!isPasswordValid) {
-    throw new UnauthorizedError("Invalid email or password");
+    throw new UnauthorizedError("Invalid credentials. Please verify your email / ATHLIX ID and password.");
   }
 
   let coachId: string | undefined = user.coachId?.toString();
@@ -64,5 +87,8 @@ export async function loginUser(input: LoginInput): Promise<{
 
   const token = await signSessionToken(payload);
 
-  return { token, payload };
+  return {
+    token,
+    payload,
+  };
 }

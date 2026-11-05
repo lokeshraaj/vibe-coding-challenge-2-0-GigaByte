@@ -1,3 +1,4 @@
+import "./dns-init";
 import { MongoClient, ServerApiVersion } from "mongodb";
 
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/athlix_dev";

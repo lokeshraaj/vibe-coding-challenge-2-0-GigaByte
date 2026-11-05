@@ -1,12 +1,13 @@
 export type UserRole =
   | 'PLATFORM_ADMIN'
+  | 'SUPER_ADMIN'
   | 'ACADEMY_OWNER'
   | 'COACH'
   | 'SCOUT'
   | 'PLAYER';
 
 export type AcademyStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
-export type UserStatus = 'ACTIVE' | 'INVITED' | 'DEACTIVATED';
+export type UserStatus = 'ACTIVE' | 'PENDING' | 'INVITED' | 'DEACTIVATED';
 export type PlayerStatus = 'ACTIVE' | 'INJURED' | 'DEACTIVATED';
 export type SessionStatus = 'OPEN' | 'CLOSED';
 export type AttendanceStatus = 'PRESENT' | 'ABSENT';
@@ -60,14 +61,19 @@ export interface ICoach {
   _id: string;
   academyId: string;
   userId: string;
+  coachCode?: string;
   name?: string;
   email?: string;
+  phone?: string;
   sport: string;
+  assignedSports?: string[];
   specialization?: string;
   experienceYears?: number;
   bio?: string;
   assignedScoutId?: string;
+  accountStatus?: 'PENDING' | 'ACTIVE' | 'INACTIVE';
   status: 'ACTIVE' | 'INACTIVE';
+  activatedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -107,6 +113,8 @@ export interface IPlayer {
     emergencyContactPhone?: string;
   };
   status: PlayerStatus;
+  accountStatus?: 'PENDING' | 'ACTIVE' | 'INACTIVE';
+  activatedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

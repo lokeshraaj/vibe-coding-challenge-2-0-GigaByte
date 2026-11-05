@@ -50,7 +50,7 @@ export default function PlatformAdminDashboard() {
   }, []);
 
   return (
-    <DashboardShell allowedRoles={["PLATFORM_ADMIN"]}>
+    <DashboardShell allowedRoles={["PLATFORM_ADMIN", "SUPER_ADMIN"]}>
       <div className="space-y-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">

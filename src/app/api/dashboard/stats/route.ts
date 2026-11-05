@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     const academyId = session.academyId;
 
     // 1. PLATFORM SUPER ADMIN
-    if (role === "PLATFORM_ADMIN") {
+    if (role === "PLATFORM_ADMIN" || role === "SUPER_ADMIN") {
       const [
         totalAcademies,
         activeAcademies,

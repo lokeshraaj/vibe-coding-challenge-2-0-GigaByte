@@ -45,10 +45,17 @@ export function DashboardShell({ children, allowedRoles }: DashboardShellProps) 
           return;
         }
 
-        if (allowedRoles && !allowedRoles.includes(data.user.role)) {
+        const userRole = data.user.role;
+        const roleAuthorized =
+          !allowedRoles ||
+          allowedRoles.includes(userRole) ||
+          ((userRole === "SUPER_ADMIN" || userRole === "PLATFORM_ADMIN") &&
+            (allowedRoles.includes("PLATFORM_ADMIN") || allowedRoles.includes("SUPER_ADMIN")));
+
+        if (allowedRoles && !roleAuthorized) {
           // Redirect to appropriate dashboard
-          const r = data.user.role;
-          if (r === "PLATFORM_ADMIN") router.push("/admin");
+          const r = userRole;
+          if (r === "PLATFORM_ADMIN" || r === "SUPER_ADMIN") router.push("/admin");
           else if (r === "ACADEMY_OWNER") router.push("/owner");
           else if (r === "COACH") router.push("/coach");
           else if (r === "SCOUT") router.push("/scout");

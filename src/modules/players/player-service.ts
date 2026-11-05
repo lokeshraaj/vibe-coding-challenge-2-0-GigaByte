@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
-import { Player, Coach, User } from "@/models";
-import { generatePlayerCode, calculateAge } from "@/lib/utils";
-import { hashPassword } from "@/lib/auth/password";
+import { Player, Coach, User, Academy, AuditLog } from "@/models";
+import { calculateAge } from "@/lib/utils";
+import { generateAthlixId } from "@/lib/id-generator";
+import { sendPlayerNotificationEmail } from "@/lib/email/brevo";
 import { ConflictError, NotFoundError, ForbiddenError } from "@/lib/errors";
 
 export interface CreatePlayerInput {
@@ -36,7 +37,7 @@ export interface PlayerFilterQuery {
   status?: string;
 }
 
-export async function createPlayer(input: CreatePlayerInput) {
+export async function createPlayer(input: CreatePlayerInput, actorId?: string) {
   // Verify coach belongs to the same academy
   const coach = await Coach.findOne({
     _id: new mongoose.Types.ObjectId(input.coachId),
@@ -47,32 +48,29 @@ export async function createPlayer(input: CreatePlayerInput) {
     throw new NotFoundError("Assigned coach does not exist in this academy.");
   }
 
-  // Generate unique player code within academy
-  let playerCode = generatePlayerCode(input.sport);
-  let attempts = 0;
-  while (attempts < 5) {
-    const existing = await Player.findOne({
-      academyId: new mongoose.Types.ObjectId(input.academyId),
-      playerCode,
-    });
-    if (!existing) break;
-    playerCode = generatePlayerCode(input.sport);
-    attempts++;
+  const academy = await Academy.findById(new mongoose.Types.ObjectId(input.academyId));
+  if (!academy) {
+    throw new NotFoundError("Academy not found");
   }
+
+  // Generate atomic, collision-free Player ID (e.g. DPLFO001)
+  const playerCode = await generateAthlixId({
+    academyId: input.academyId,
+    userType: "PLAYER",
+    sport: input.sport,
+  });
 
   const playerId = new mongoose.Types.ObjectId();
   let userId: mongoose.Types.ObjectId | undefined = undefined;
+  const hasEmail = Boolean(input.contact?.email?.trim());
+  const normalizedEmail = input.contact?.email?.trim().toLowerCase();
 
-  // If player requested a login account and provided email
-  if (input.createLoginAccount && input.contact?.email) {
-    const normalizedEmail = input.contact.email.trim().toLowerCase();
+  // If email is provided, create pending user identity for ID-based activation
+  if (hasEmail && normalizedEmail) {
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       throw new ConflictError("A user account with this player email already exists.");
     }
-
-    const rawPassword = input.accountPassword || "PlayerAthlix2026!";
-    const hashedPassword = await hashPassword(rawPassword);
 
     userId = new mongoose.Types.ObjectId();
     await User.create({
@@ -81,9 +79,11 @@ export async function createPlayer(input: CreatePlayerInput) {
       role: "PLAYER",
       name: input.name.trim(),
       email: normalizedEmail,
-      passwordHash: hashedPassword,
       playerId: playerId,
-      status: "ACTIVE",
+      status: "PENDING",
+      metadata: {
+        phone: input.contact?.phone?.trim() || "",
+      },
     });
   }
 
@@ -92,7 +92,7 @@ export async function createPlayer(input: CreatePlayerInput) {
     academyId: new mongoose.Types.ObjectId(input.academyId),
     coachId: new mongoose.Types.ObjectId(input.coachId),
     userId: userId || null,
-    playerCode,
+    playerCode: playerCode,
     name: input.name.trim(),
     dateOfBirth: new Date(input.dateOfBirth),
     gender: input.gender || "MALE",
@@ -101,8 +101,40 @@ export async function createPlayer(input: CreatePlayerInput) {
     photoUrl: input.photoUrl || "",
     enrollmentDate: new Date(input.enrollmentDate),
     contact: input.contact || {},
+    accountStatus: hasEmail ? "PENDING" : "ACTIVE",
     status: "ACTIVE",
   });
+
+  // Record audit log
+  try {
+    if (actorId) {
+      await AuditLog.create({
+        academyId: new mongoose.Types.ObjectId(input.academyId),
+        actorId: new mongoose.Types.ObjectId(actorId),
+        action: "PLAYER_ENROLLED",
+        resourceType: "PLAYER",
+        resourceId: playerCode,
+        details: { name: player.name, playerCode, coachId: input.coachId },
+      });
+    }
+  } catch (err) {
+    console.error("[AuditLog Error]", err);
+  }
+
+  // Send informational notification email via Brevo if email was provided
+  if (hasEmail && normalizedEmail) {
+    try {
+      await sendPlayerNotificationEmail({
+        toEmail: normalizedEmail,
+        playerName: player.name,
+        playerId: playerCode,
+        academyName: academy.name,
+        sport: player.sport,
+      });
+    } catch (emailErr) {
+      console.error("[Brevo Notification Warning] Email delivery failed, ID preserved:", emailErr);
+    }
+  }
 
   return {
     id: player._id.toString(),
@@ -113,8 +145,35 @@ export async function createPlayer(input: CreatePlayerInput) {
     age: calculateAge(player.dateOfBirth),
     coachId: player.coachId.toString(),
     status: player.status,
+    accountStatus: player.accountStatus,
     hasLoginAccount: Boolean(userId),
   };
+}
+
+export async function resendPlayerNotification(academyId: string, playerId: string) {
+  const player = await Player.findOne({
+    _id: new mongoose.Types.ObjectId(playerId),
+    academyId: new mongoose.Types.ObjectId(academyId),
+  });
+
+  if (!player || !player.contact?.email) {
+    throw new NotFoundError("Player record or email not found");
+  }
+
+  const academy = await Academy.findById(new mongoose.Types.ObjectId(academyId));
+  if (!academy) {
+    throw new NotFoundError("Academy not found");
+  }
+
+  await sendPlayerNotificationEmail({
+    toEmail: player.contact.email,
+    playerName: player.name,
+    playerId: player.playerCode,
+    academyName: academy.name,
+    sport: player.sport,
+  });
+
+  return { success: true, message: `Notification re-sent to ${player.contact.email}` };
 }
 
 export async function listPlayers(filter: PlayerFilterQuery) {
@@ -126,22 +185,19 @@ export async function listPlayers(filter: PlayerFilterQuery) {
     query.coachId = new mongoose.Types.ObjectId(filter.coachId);
   }
 
-  if (filter.sport && filter.sport !== "ALL") {
-    query.sport = new RegExp(`^${filter.sport}$`, "i");
+  if (filter.sport) {
+    query.sport = filter.sport;
   }
 
-  if (filter.status && filter.status !== "ALL") {
+  if (filter.status) {
     query.status = filter.status;
-  } else {
-    query.status = "ACTIVE";
   }
 
-  if (filter.search && filter.search.trim()) {
-    const s = filter.search.trim();
+  if (filter.search) {
     query.$or = [
-      { name: { $regex: s, $options: "i" } },
-      { playerCode: { $regex: s, $options: "i" } },
-      { position: { $regex: s, $options: "i" } },
+      { name: { $regex: filter.search, $options: "i" } },
+      { playerCode: { $regex: filter.search, $options: "i" } },
+      { "contact.email": { $regex: filter.search, $options: "i" } },
     ];
   }
 
@@ -149,12 +205,9 @@ export async function listPlayers(filter: PlayerFilterQuery) {
   const limit = Math.min(100, Math.max(1, filter.limit || 20));
   const skip = (page - 1) * limit;
 
-  const [players, totalCount] = await Promise.all([
+  const [items, totalCount] = await Promise.all([
     Player.find(query)
-      .populate({
-        path: "coachId",
-        populate: { path: "userId", select: "name email" },
-      })
+      .populate("coachId", "sport specialization userId")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -162,39 +215,36 @@ export async function listPlayers(filter: PlayerFilterQuery) {
     Player.countDocuments(query),
   ]);
 
-  const items = players.map((p) => {
-    const coachDoc = p.coachId as unknown as {
-      _id: mongoose.Types.ObjectId;
-      sport: string;
-      userId: { name: string; email: string };
-    };
-
+  const mappedItems = items.map((p) => {
     return {
       id: p._id.toString(),
       playerCode: p.playerCode,
       name: p.name,
+      dateOfBirth: p.dateOfBirth.toISOString().split("T")[0],
       age: calculateAge(p.dateOfBirth),
-      dateOfBirth: p.dateOfBirth.toISOString(),
       gender: p.gender,
       sport: p.sport,
       position: p.position,
       photoUrl: p.photoUrl,
-      enrollmentDate: p.enrollmentDate.toISOString(),
+      enrollmentDate: p.enrollmentDate.toISOString().split("T")[0],
+      coachId: p.coachId ? (p.coachId as any)._id?.toString() || p.coachId.toString() : "",
       contact: p.contact,
       status: p.status,
-      coachId: coachDoc?._id ? coachDoc._id.toString() : p.coachId.toString(),
-      coachName: coachDoc?.userId?.name || "Unassigned",
+      accountStatus: p.accountStatus || "ACTIVE",
       hasLoginAccount: Boolean(p.userId),
+      createdAt: p.createdAt.toISOString(),
     };
   });
 
   return {
-    items,
+    items: mappedItems,
     pagination: {
       page,
       limit,
       totalCount,
       totalPages: Math.ceil(totalCount / limit),
+      hasNextPage: page * limit < totalCount,
+      hasPrevPage: page > 1,
     },
   };
 }
@@ -203,13 +253,10 @@ export async function getPlayerById(academyId: string, playerId: string) {
   const player = await Player.findOne({
     _id: new mongoose.Types.ObjectId(playerId),
     academyId: new mongoose.Types.ObjectId(academyId),
-  }).populate({
-    path: "coachId",
-    populate: { path: "userId", select: "name email" },
-  });
+  }).populate("coachId", "sport specialization userId");
 
   if (!player) {
-    throw new NotFoundError("Player not found in this academy");
+    throw new NotFoundError("Athlete not found in this academy");
   }
 
   return player;
@@ -219,28 +266,33 @@ export async function updatePlayer(
   academyId: string,
   playerId: string,
   updates: Partial<CreatePlayerInput>,
-  actorCoachId?: string
+  coachId?: string
 ) {
-  const player = await Player.findOne({
+  const query: Record<string, unknown> = {
     _id: new mongoose.Types.ObjectId(playerId),
     academyId: new mongoose.Types.ObjectId(academyId),
-  });
+  };
 
-  if (!player) {
-    throw new NotFoundError("Player not found");
+  if (coachId) {
+    query.coachId = new mongoose.Types.ObjectId(coachId);
   }
 
-  // If updated by a coach, enforce coach-level ownership
-  if (actorCoachId && player.coachId.toString() !== actorCoachId) {
-    throw new ForbiddenError("Coaches can only update their own assigned players");
+  const player = await Player.findOne(query);
+
+  if (!player) {
+    throw new NotFoundError("Athlete not found in this academy");
   }
 
   if (updates.name) player.name = updates.name.trim();
   if (updates.position) player.position = updates.position.trim();
   if (updates.gender) player.gender = updates.gender;
-  if (updates.photoUrl !== undefined) player.photoUrl = updates.photoUrl;
   if (updates.dateOfBirth) player.dateOfBirth = new Date(updates.dateOfBirth);
-  if (updates.contact) player.contact = { ...player.contact, ...updates.contact };
+  if (updates.contact) {
+    player.contact = {
+      ...player.contact,
+      ...updates.contact,
+    };
+  }
 
   await player.save();
   return player;

@@ -28,18 +28,52 @@ export const academyRegisterSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.string().min(1, "Email or ATHLIX ID is required"),
   password: z.string().min(1, "Password is required"),
 });
 
 export const coachInviteSchema = z.object({
   name: z.string().min(2, "Coach name must be at least 2 characters"),
   email: z.string().email("Valid email required"),
+  phone: z.string().optional(),
   sport: z.string().min(2, "Sport is required"),
   specialization: z.string().optional(),
   experienceYears: z.coerce.number().min(0).default(0),
   bio: z.string().optional(),
 });
+
+export const verifyIdSchema = z.object({
+  athlixId: z.string().min(6, "Valid ATHLIX ID is required").trim().toUpperCase(),
+  role: z.enum(["COACH", "PLAYER"]),
+});
+
+export const verifyOtpSchema = z.object({
+  athlixId: z.string().min(6).trim().toUpperCase(),
+  otp: z
+    .string()
+    .length(6, "OTP must be exactly 6 digits")
+    .regex(/^\d+$/, "OTP must contain only numbers"),
+});
+
+export const resendOtpSchema = z.object({
+  athlixId: z.string().min(6).trim().toUpperCase(),
+});
+
+export const setPasswordSchema = z
+  .object({
+    activationToken: z.string().min(1, "Activation token is required"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 export const scoutInviteSchema = z.object({
   name: z.string().min(2, "Scout name must be at least 2 characters"),

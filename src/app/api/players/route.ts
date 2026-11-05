@@ -72,11 +72,14 @@ export async function POST(req: Request) {
       assignedCoachId = session.coachId;
     }
 
-    const player = await createPlayer({
-      academyId,
-      ...validatedData,
-      coachId: assignedCoachId,
-    });
+    const player = await createPlayer(
+      {
+        academyId,
+        ...validatedData,
+        coachId: assignedCoachId,
+      },
+      session.userId
+    );
 
     return NextResponse.json({ success: true, player }, { status: 201 });
   } catch (error) {
