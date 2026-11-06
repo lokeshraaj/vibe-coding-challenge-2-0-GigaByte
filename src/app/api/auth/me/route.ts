@@ -6,12 +6,13 @@ import { handleApiError } from "@/lib/errors";
 
 export async function GET(req: Request) {
   try {
+    await connectToDatabase();
+
     const session = await getAuthSession(req);
     if (!session) {
       return NextResponse.json({ success: false, user: null }, { status: 401 });
     }
 
-    await connectToDatabase();
     const user = await User.findById(session.userId).lean();
     if (!user) {
       return NextResponse.json({ success: false, user: null }, { status: 404 });

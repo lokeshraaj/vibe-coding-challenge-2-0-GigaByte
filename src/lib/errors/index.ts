@@ -49,6 +49,47 @@ export class TenantIsolationError extends AppError {
   }
 }
 
+export class DatabaseConnectionError extends AppError {
+  constructor(message: string = "Database service temporarily unavailable", details?: unknown) {
+    super(message, 503, details);
+  }
+}
+
+/**
+ * Detects whether an error originates from a database connection or network failure.
+ */
+export function isDatabaseError(error: unknown): boolean {
+  if (!error) return false;
+  if (error instanceof DatabaseConnectionError) return true;
+
+  if (typeof error === "object") {
+    const err = error as Record<string, any>;
+    const name = err.name || "";
+    const msg = typeof err.message === "string" ? err.message : "";
+    const code = err.code || "";
+    const syscall = err.syscall || "";
+
+    if (
+      name === "MongooseServerSelectionError" ||
+      name === "MongoServerSelectionError" ||
+      name === "MongoNetworkError" ||
+      name === "MongoTopologyClosedError" ||
+      name === "MongoNotConnectedError" ||
+      code === "ECONNREFUSED" ||
+      code === "ETIMEOUT" ||
+      syscall === "querySrv" ||
+      msg.includes("querySrv") ||
+      msg.includes("Could not connect to any servers in your MongoDB Atlas cluster") ||
+      msg.includes("SSL alert number 80") ||
+      msg.includes("tlsv1 alert internal error")
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function handleApiError(error: unknown): { status: number; body: { success: false; error: string; details?: unknown } } {
   console.error("[API Error Handler]", error);
 
@@ -71,6 +112,16 @@ export function handleApiError(error: unknown): { status: number; body: { succes
         success: false,
         error: error.message,
         details: error.details,
+      },
+    };
+  }
+
+  if (isDatabaseError(error)) {
+    return {
+      status: 503,
+      body: {
+        success: false,
+        error: "Database service temporarily unavailable. Please try again shortly.",
       },
     };
   }

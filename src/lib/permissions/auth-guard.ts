@@ -6,6 +6,7 @@ import {
   UnauthorizedError,
   ForbiddenError,
   TenantIsolationError,
+  isDatabaseError,
 } from "@/lib/errors";
 
 /**
@@ -29,7 +30,10 @@ export async function getAuthSession(req?: Request): Promise<AuthSessionPayload 
         };
       }
     }
-  } catch {
+  } catch (err) {
+    if (isDatabaseError(err)) {
+      throw err;
+    }
     // In non-auth context or test environments
   }
 

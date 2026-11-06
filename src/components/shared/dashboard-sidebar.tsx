@@ -81,8 +81,8 @@ export function DashboardSidebar({ role, academyName }: SidebarProps) {
       )}
     >
       {/* Brand Header */}
-      <div className="flex h-18 items-center justify-between px-4 border-b border-[#DCE1E3]">
-        <Link href="/" className="flex items-center gap-2.5 overflow-hidden">
+      <div className="flex h-18 min-h-[4.5rem] items-center justify-between px-4 py-3 border-b border-[#DCE1E3]">
+        <Link href="/" className="flex items-center gap-2.5 overflow-hidden pt-1">
           {collapsed ? (
             <img
               src="/images/logo-icon.png"
@@ -90,7 +90,7 @@ export function DashboardSidebar({ role, academyName }: SidebarProps) {
               className="h-7 w-auto object-contain mx-auto"
             />
           ) : (
-            <div className="flex flex-col">
+            <div className="flex flex-col pt-0.5">
               <img
                 src="/images/logo.png"
                 alt="ATHLIX"

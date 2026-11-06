@@ -1,14 +1,21 @@
 /**
  * Brevo (formerly Sendinblue) Transactional Email Service
- * Handles informational notifications for newly provisioned Coaches and Players.
+ * Handles all transactional communications for ATHLIX:
+ * - Informational notifications with Coach IDs
+ * - Informational notifications with Player IDs
+ * - Cryptographically verified 6-digit OTP verification emails for account activation
  */
 
-interface BrevoSendResult {
+export interface BrevoSendResult {
   success: boolean;
   messageId?: string;
   error?: string;
 }
 
+/**
+ * Core Brevo API dispatcher for transactional emails.
+ * Uses BREVO_API_KEY, BREVO_SENDER_EMAIL, and BREVO_SENDER_NAME.
+ */
 export async function sendBrevoEmail(params: {
   toEmail: string;
   toName: string;
@@ -21,14 +28,16 @@ export async function sendBrevoEmail(params: {
 
   // Fallback for development/testing when API key is not yet set in environment
   if (!apiKey) {
+    const sanitizedSubject = params.subject.replace(/\b\d{6}\b/, "[REDACTED_OTP]");
     console.log(
       `\n============================================================\n` +
       `[BREVO EMAIL SIMULATION - DEV MODE]\n` +
       `To: ${params.toName} <${params.toEmail}>\n` +
       `From: ${senderName} <${senderEmail}>\n` +
-      `Subject: ${params.subject}\n` +
+      `Subject: ${sanitizedSubject}\n` +
+      `Security: Passcodes and sensitive authentication values are redacted\n` +
       `------------------------------------------------------------\n` +
-      `Notice: To send real emails, provide BREVO_API_KEY in .env.local\n` +
+      `Notice: To dispatch real emails, configure BREVO_API_KEY in .env.local\n` +
       `============================================================\n`
     );
     return { success: true, messageId: `mock-brevo-${Date.now()}` };
@@ -52,16 +61,16 @@ export async function sendBrevoEmail(params: {
     if (!res.ok) {
       const errBody = await res.text();
       console.error("[Brevo API Error]", res.status, errBody);
-      return { success: false, error: errBody };
+      return { success: false, error: `Brevo API HTTP ${res.status}: ${errBody}` };
     }
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     return { success: true, messageId: data.messageId };
   } catch (error) {
     console.error("[Brevo Network Error]", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Network error contacting Brevo",
     };
   }
 }
@@ -218,6 +227,83 @@ export async function sendPlayerNotificationEmail(params: {
     toEmail: params.toEmail,
     toName: params.playerName,
     subject: `Your ATHLIX Player ID: ${params.playerId} - ${params.academyName}`,
+    htmlContent,
+  });
+}
+
+/**
+ * Sends a 6-digit OTP verification email through Brevo for ATHLIX ID onboarding.
+ * - Branded with official ATHLIX styling
+ * - Clearly states 5-minute expiration
+ * - Displays security warnings against sharing
+ */
+export async function sendOtpEmail(params: {
+  toEmail: string;
+  recipientName: string;
+  otpCode: string;
+  role: "COACH" | "PLAYER";
+  athlixId: string;
+}): Promise<BrevoSendResult> {
+  const roleTitle = params.role === "COACH" ? "Coach" : "Player";
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F4F3EE; margin: 0; padding: 40px 20px; color: #101820; }
+        .container { max-width: 520px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; border: 1px solid #DCE1E3; overflow: hidden; }
+        .header { background: #101820; padding: 26px; text-align: center; }
+        .header h1 { color: #FFFFFF; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: 2px; }
+        .header span { color: #C6F432; }
+        .content { padding: 32px 28px; }
+        .badge { display: inline-block; background: #F4F3EE; color: #101820; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px; border: 1px solid #DCE1E3; margin-bottom: 16px; }
+        .title { font-size: 18px; font-weight: 700; color: #101820; margin-bottom: 6px; }
+        .subtitle { font-size: 13px; color: #8B969E; margin-bottom: 20px; }
+        .otp-container { background: #F4F3EE; border-radius: 8px; border: 1px solid #DCE1E3; padding: 22px; text-align: center; margin: 24px 0; }
+        .otp-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #8B969E; margin-bottom: 8px; }
+        .otp-digits { font-family: 'Courier New', Courier, monospace; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #101820; }
+        .expiry-notice { font-size: 13px; font-weight: 600; color: #EA4335; margin-top: 12px; }
+        .warning-box { background: #FFF9E6; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 4px; font-size: 12px; line-height: 1.5; color: #92400E; margin-top: 24px; }
+        .footer { background: #FAF9F5; border-top: 1px solid #DCE1E3; padding: 18px; text-align: center; font-size: 11px; color: #8B969E; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>ATHL<span>I</span>X</h1>
+        </div>
+        <div class="content">
+          <div class="badge">Security Verification</div>
+          <div class="title">Verify Your ${roleTitle} Account</div>
+          <div class="subtitle">ATHLIX ID: <strong>${params.athlixId}</strong></div>
+          <p style="font-size: 14px; line-height: 1.6; color: #202A32; margin: 0 0 16px 0;">
+            Hello ${params.recipientName}, use the verification code below to verify your email address and configure your password.
+          </p>
+
+          <div class="otp-container">
+            <div class="otp-label">One-Time Verification Passcode</div>
+            <div class="otp-digits">${params.otpCode}</div>
+            <div class="expiry-notice">⏱ This code expires in exactly 5 minutes</div>
+          </div>
+
+          <div class="warning-box">
+            <strong>Security Warning:</strong> Never share this OTP with anyone. ATHLIX support will never ask for your verification code. If you did not attempt to register, please disregard this email.
+          </div>
+        </div>
+        <div class="footer">
+          &copy; ${new Date().getFullYear()} ATHLIX Platform Security. All rights reserved.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendBrevoEmail({
+    toEmail: params.toEmail,
+    toName: params.recipientName,
+    subject: `${params.otpCode} is your ATHLIX verification code`,
     htmlContent,
   });
 }

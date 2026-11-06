@@ -1,35 +1,56 @@
-import "./dns-init";
-import { MongoClient, ServerApiVersion } from "mongodb";
-
-const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/athlix_dev";
-const options = {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: false,
-    deprecationErrors: true,
-  },
-};
-
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
+import { connectToDatabase } from "./mongodb";
+import { MongoClient } from "mongodb";
 
 declare global {
   // eslint-disable-next-line no-var
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-if (process.env.NODE_ENV === "development") {
-  // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
+/**
+ * Obtains the underlying MongoClient instance from the unified Mongoose connection.
+ * Avoids running dual independent database connection pools and ensures shared DNS configuration,
+ * retry logic, and singleton lifecycle management.
+ */
+function getMongoClientPromise(): Promise<MongoClient> {
+  if (process.env.NODE_ENV === "development" && global._mongoClientPromise) {
+    return global._mongoClientPromise;
   }
-  clientPromise = global._mongoClientPromise;
-} else {
-  // In production mode, it's best to not use a global variable.
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+
+  const promise = connectToDatabase()
+    .then((mongooseInstance) => {
+      return mongooseInstance.connection.getClient() as unknown as MongoClient;
+    })
+    .catch((err) => {
+      if (process.env.NODE_ENV === "development") {
+        global._mongoClientPromise = undefined;
+      }
+      throw err;
+    });
+
+  if (process.env.NODE_ENV === "development") {
+    global._mongoClientPromise = promise;
+  }
+
+  return promise;
 }
+
+// Proxied Promise implementation to preserve singleton caching without unhandled rejections at module load time
+const clientPromise: Promise<MongoClient> = {
+  then<TResult1 = MongoClient, TResult2 = never>(
+    onfulfilled?: ((value: MongoClient) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
+  ): Promise<TResult1 | TResult2> {
+    return getMongoClientPromise().then(onfulfilled, onrejected);
+  },
+  catch<TResult = never>(
+    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
+  ): Promise<MongoClient | TResult> {
+    return getMongoClientPromise().catch(onrejected);
+  },
+  finally(onfinally?: (() => void) | null): Promise<MongoClient> {
+    return getMongoClientPromise().finally(onfinally);
+  },
+  [Symbol.toStringTag]: "Promise",
+} as unknown as Promise<MongoClient>;
 
 export default clientPromise;

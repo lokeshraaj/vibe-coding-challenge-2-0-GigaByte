@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { SignJWT, jwtVerify } from "jose";
 import { Coach, Player, User, OtpChallenge, AuditLog } from "@/models";
 import { generateSecureOtp, hashOtp, verifyOtp, maskEmail } from "@/lib/auth/otp";
-import { sendOtpEmail } from "@/lib/email/resend";
+import { sendOtpEmail } from "@/lib/email/brevo";
 import { hashPassword } from "@/lib/auth/password";
 import { signSessionToken } from "@/lib/auth/jwt";
 import {
@@ -42,7 +42,7 @@ export async function verifyActivationToken(token: string): Promise<ActivationPa
 }
 
 /**
- * Step 1 & 2: Verify ATHLIX ID and dispatch Resend OTP.
+ * Step 1 & 2: Verify ATHLIX ID and dispatch Brevo OTP email.
  */
 export async function initiateIdRegistration(params: {
   athlixId: string;
@@ -108,6 +108,16 @@ export async function initiateIdRegistration(params: {
     }
   }
 
+  // Hourly Rate Limit: Max 5 OTP requests per hour per ATHLIX ID
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const hourlyCount = await OtpChallenge.countDocuments({
+    identifier: cleanId,
+    createdAt: { $gte: oneHourAgo },
+  });
+  if (hourlyCount >= 5) {
+    throw new AppError("Too many OTP requests for this account. Please wait before requesting another code.", 429);
+  }
+
   // Generate cryptographically secure 6-digit OTP
   const rawOtp = generateSecureOtp();
   const otpHash = hashOtp(rawOtp);
@@ -118,7 +128,7 @@ export async function initiateIdRegistration(params: {
     { $set: { consumedAt: new Date(0) } } // mark superseded
   );
 
-  // Save new challenge in MongoDB
+  // Save new challenge in MongoDB (5-minute expiration, 5 verification attempts max)
   const challenge = await OtpChallenge.create({
     identifier: cleanId,
     email: recipientEmail.toLowerCase().trim(),
@@ -130,14 +140,22 @@ export async function initiateIdRegistration(params: {
     ipAddress: params.ipAddress || "",
   });
 
-  // Dispatch OTP email via Resend
-  await sendOtpEmail({
+  // Dispatch OTP email via Brevo
+  const emailResult = await sendOtpEmail({
     toEmail: recipientEmail,
     recipientName,
     otpCode: rawOtp,
     role: params.role,
     athlixId: cleanId,
   });
+
+  // Verify Brevo API acceptance: Never show a false success message if email delivery fails
+  if (!emailResult.success) {
+    // Rollback challenge so an undelivered OTP does not lock the user out or linger
+    await OtpChallenge.deleteOne({ _id: challenge._id });
+    console.error("[Brevo OTP Dispatch Failed]", emailResult.error);
+    throw new AppError("Failed to deliver verification email. Please try again shortly.", 502);
+  }
 
   return {
     success: true,

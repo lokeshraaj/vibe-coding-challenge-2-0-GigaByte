@@ -31,7 +31,7 @@ export function DashboardHeader({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-18 w-full items-center justify-between border-b border-[#DCE1E3] bg-white px-4 sm:px-8 py-3">
+    <header className="sticky top-0 z-30 flex h-18 min-h-[4.5rem] w-full items-center justify-between border-b border-[#DCE1E3] bg-white px-4 sm:px-8 py-3">
       {/* Left: Academy Tenant context */}
       <div className="flex items-center gap-3">
         {academyName ? (
