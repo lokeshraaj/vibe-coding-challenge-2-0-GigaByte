@@ -6,16 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Search, Plus, X, RefreshCw } from "lucide-react";
+import { Search, Plus, X, RefreshCw, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 interface ScoutItem {
   id: string;
+  scoutCode?: string;
   name: string;
   email: string;
   organization?: string;
   experienceYears: number;
   status: string;
+  accountStatus?: string;
   assignedCoachId: string;
   coachName: string;
   coachSport: string;
@@ -47,6 +49,7 @@ export default function ScoutsManagementPage() {
   const [reassignScoutItem, setReassignScoutItem] = useState<ScoutItem | null>(null);
   const [newCoachId, setNewCoachId] = useState("");
   const [submittingReassign, setSubmittingReassign] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -98,7 +101,8 @@ export default function ScoutsManagementPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create scout");
 
-      toast.success(`Scout ${addForm.name} assigned successfully!`);
+      const codeMsg = data.scout?.scoutCode ? ` (Scout ID: ${data.scout.scoutCode})` : "";
+      toast.success(`Scout profile created successfully!${codeMsg} Onboarding email sent.`);
       setIsAddOpen(false);
       setAddForm({
         name: "",
@@ -109,13 +113,13 @@ export default function ScoutsManagementPage() {
       });
       fetchData();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error creating scout");
+      toast.error(err instanceof Error ? err.message : "Creation failed");
     } finally {
       setSubmittingAdd(false);
     }
   };
 
-  const handleReassign = async (e: React.FormEvent) => {
+  const handleReassignScout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reassignScoutItem || !newCoachId) return;
 
@@ -131,28 +135,45 @@ export default function ScoutsManagementPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to reassign scout");
+      if (!res.ok) throw new Error(data.error || "Reassignment failed");
 
-      toast.success("Scout reassigned successfully!");
+      toast.success("Scout reassigned to new coach successfully!");
       setReassignScoutItem(null);
       fetchData();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error reassigning scout");
+      toast.error(err instanceof Error ? err.message : "Reassignment failed");
     } finally {
       setSubmittingReassign(false);
     }
   };
 
+  const handleResendNotification = async (scoutId: string) => {
+    setResendingId(scoutId);
+    try {
+      const res = await fetch(`/api/scouts/${scoutId}/resend-notification`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to resend notification");
+      toast.success("Scout onboarding email resent successfully!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to resend notification");
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   return (
-    <DashboardShell allowedRoles={["ACADEMY_OWNER", "PLATFORM_ADMIN"]}>
+    <DashboardShell allowedRoles={["ACADEMY_OWNER"]}>
       <div className="space-y-6">
+        {/* Header with Title and Add Scout Button */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
-              Dedicated Scout Network
+              Academy Scouting Staff
             </h1>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
-              Assign Talent Scouts to Head Coaches
+              Manage talent scouts assigned to coaches and evaluate ready trial athletes
             </p>
           </div>
 
@@ -161,10 +182,10 @@ export default function ScoutsManagementPage() {
             size="sm"
             onClick={() => setIsAddOpen(true)}
             disabled={coaches.length === 0}
-            className="gap-2 font-bold shadow-sm"
+            className="gap-2 shadow-sm"
           >
             <Plus className="h-4 w-4" />
-            <span>Assign New Scout</span>
+            <span>Add New Scout</span>
           </Button>
         </div>
 
@@ -186,6 +207,7 @@ export default function ScoutsManagementPage() {
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-[#DCE1E3] bg-[#F4F3EE] text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
+                      <th className="p-4">Scout ID</th>
                       <th className="p-4">Scout Name</th>
                       <th className="p-4">Organization / Agency</th>
                       <th className="p-4">Assigned Coach</th>
@@ -197,6 +219,11 @@ export default function ScoutsManagementPage() {
                   <tbody className="divide-y divide-[#DCE1E3]">
                     {scouts.map((s) => (
                       <tr key={s.id} className="hover:bg-[#F4F3EE] transition-colors">
+                        <td className="p-4">
+                          <span className="font-mono text-xs font-bold text-[#101820] bg-[#F4F3EE] px-2 py-0.5 rounded border border-[#DCE1E3]">
+                            {s.scoutCode || "PENDING"}
+                          </span>
+                        </td>
                         <td className="p-4 font-bold text-[#101820]">
                           <div className="text-sm">{s.name}</div>
                           <div className="text-[10px] text-[#8B969E] font-normal">{s.email}</div>
@@ -214,21 +241,34 @@ export default function ScoutsManagementPage() {
                           {s.experienceYears} Years
                         </td>
                         <td className="p-4">
-                          <StatusBadge status={s.status} />
+                          <StatusBadge status={s.accountStatus === "PENDING" ? "PENDING" : s.status} />
                         </td>
                         <td className="p-4 text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setReassignScoutItem(s);
-                              setNewCoachId(s.assignedCoachId);
-                            }}
-                            className="text-xs gap-1.5 border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE]"
-                          >
-                            <RefreshCw className="h-3.5 w-3.5" />
-                            <span>Reassign</span>
-                          </Button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleResendNotification(s.id)}
+                              disabled={resendingId === s.id}
+                              className="text-xs gap-1 border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE]"
+                              title="Resend welcome email with Scout ID and Academy Code"
+                            >
+                              <Mail className="h-3 w-3" />
+                              <span className="hidden sm:inline">Resend Email</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setReassignScoutItem(s);
+                                setNewCoachId(s.assignedCoachId);
+                              }}
+                              className="text-xs gap-1.5 border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE]"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5" />
+                              <span>Reassign</span>
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -278,55 +318,59 @@ export default function ScoutsManagementPage() {
                 <Input
                   label="Scout Email *"
                   type="email"
-                  placeholder="scout@agency.com"
+                  placeholder="scout@apex.com"
                   value={addForm.email}
                   onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
                   required
                 />
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
-                    Assign To Head Coach *
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#101820]">
+                    Assigned Coaching Desk *
                   </label>
                   <select
-                    className="flex h-11 w-full rounded-md border border-[#DCE1E3] bg-white px-3 py-2 text-sm text-[#101820] focus-visible:outline-none focus-visible:border-[#101820]"
+                    className="w-full h-10 px-3 rounded-lg border border-[#DCE1E3] bg-white text-xs font-medium text-[#101820] focus:outline-none focus:ring-1 focus:ring-[#101820]"
                     value={addForm.assignedCoachId}
                     onChange={(e) => setAddForm({ ...addForm, assignedCoachId: e.target.value })}
                     required
                   >
                     {coaches.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.name} ({c.sport})
+                        {c.name} ({c.sport} Head Coach)
                       </option>
                     ))}
                   </select>
+                  <p className="text-[11px] text-[#8B969E]">
+                    The scout will specifically inspect READY trial players belonging to this coach.
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Agency / Organization"
-                    placeholder="e.g. Global Talent Group"
-                    value={addForm.organization}
-                    onChange={(e) => setAddForm({ ...addForm, organization: e.target.value })}
-                  />
+                <Input
+                  label="Organization / Agency"
+                  placeholder="e.g. National Scouting Federation"
+                  value={addForm.organization}
+                  onChange={(e) => setAddForm({ ...addForm, organization: e.target.value })}
+                />
 
-                  <Input
-                    label="Years of Experience"
-                    type="number"
-                    min="0"
-                    value={addForm.experienceYears}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, experienceYears: parseInt(e.target.value, 10) || 0 })
-                    }
-                  />
-                </div>
+                <Input
+                  label="Years of Experience"
+                  type="number"
+                  min={0}
+                  value={addForm.experienceYears}
+                  onChange={(e) => setAddForm({ ...addForm, experienceYears: parseInt(e.target.value, 10) || 0 })}
+                />
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setIsAddOpen(false)}>
+                <div className="flex justify-end gap-2 pt-4 border-t border-[#DCE1E3]">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsAddOpen(false)}
+                    className="border-[#DCE1E3]"
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" variant="athletic" size="sm" isLoading={submittingAdd}>
-                    Confirm Assignment
+                  <Button type="submit" variant="athletic" isLoading={submittingAdd}>
+                    Provision & Send Invite
                   </Button>
                 </div>
               </form>
@@ -339,43 +383,58 @@ export default function ScoutsManagementPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
             <Card className="w-full max-w-md border-[#DCE1E3] bg-white shadow-xl">
               <div className="flex items-center justify-between p-6 border-b border-[#DCE1E3]">
-                <h3 className="text-base font-bold uppercase text-[#101820]">
-                  Reassign Scout: {reassignScoutItem.name}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5 text-[#101820]" />
+                  <h3 className="text-base font-bold uppercase text-[#101820]">Reassign Scout</h3>
+                </div>
                 <button onClick={() => setReassignScoutItem(null)} className="text-[#8B969E] hover:text-[#101820]">
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleReassign} className="p-6 space-y-4">
-                <p className="text-xs text-[#8B969E]">
-                  Transfer this scout to monitor a different coach&apos;s roster. The scout will immediately lose access to the previous coach&apos;s players and see only the new coach&apos;s trial-ready athletes.
-                </p>
+              <form onSubmit={handleReassignScout} className="p-6 space-y-4">
+                <div className="p-3 bg-[#F4F3EE] rounded-lg text-xs space-y-1">
+                  <div>
+                    <span className="text-[#8B969E]">Scout:</span>{" "}
+                    <strong className="text-[#101820]">{reassignScoutItem.name}</strong>{" "}
+                    ({reassignScoutItem.scoutCode || "Pending"})
+                  </div>
+                  <div>
+                    <span className="text-[#8B969E]">Current Coach:</span>{" "}
+                    <strong className="text-[#101820]">{reassignScoutItem.coachName}</strong> (
+                    {reassignScoutItem.coachSport})
+                  </div>
+                </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
-                    Select New Head Coach *
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#101820]">
+                    Assign to New Coach *
                   </label>
                   <select
-                    className="flex h-11 w-full rounded-md border border-[#DCE1E3] bg-white px-3 py-2 text-sm text-[#101820] focus-visible:outline-none focus-visible:border-[#101820]"
+                    className="w-full h-10 px-3 rounded-lg border border-[#DCE1E3] bg-white text-xs font-medium text-[#101820] focus:outline-none focus:ring-1 focus:ring-[#101820]"
                     value={newCoachId}
                     onChange={(e) => setNewCoachId(e.target.value)}
                     required
                   >
                     {coaches.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.name} ({c.sport})
+                        {c.name} ({c.sport} Head Coach)
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setReassignScoutItem(null)}>
+                <div className="flex justify-end gap-2 pt-4 border-t border-[#DCE1E3]">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setReassignScoutItem(null)}
+                    className="border-[#DCE1E3]"
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" variant="athletic" size="sm" isLoading={submittingReassign}>
-                    Save Reassignment
+                  <Button type="submit" variant="athletic" isLoading={submittingReassign}>
+                    Confirm Reassignment
                   </Button>
                 </div>
               </form>

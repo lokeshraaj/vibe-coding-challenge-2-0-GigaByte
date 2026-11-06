@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { SignJWT, jwtVerify } from "jose";
-import { Coach, Player, User, OtpChallenge, AuditLog, Academy } from "@/models";
+import { Coach, Player, Scout, User, OtpChallenge, AuditLog, Academy } from "@/models";
 import { generateSecureOtp, hashOtp, verifyOtp, maskEmail } from "@/lib/auth/otp";
 import { sendOtpEmail } from "@/lib/email/brevo";
 import { hashPassword } from "@/lib/auth/password";
@@ -20,7 +20,7 @@ const ACTIVATION_SECRET = new TextEncoder().encode(
 export interface ActivationPayload {
   athlixId: string;
   email: string;
-  role: "COACH" | "PLAYER";
+  role: "COACH" | "PLAYER" | "SCOUT";
   challengeId: string;
   academyId?: string;
   academyCode?: string;
@@ -49,7 +49,7 @@ export async function verifyActivationToken(token: string): Promise<ActivationPa
 export async function initiateIdRegistration(params: {
   academyCode?: string;
   athlixId: string;
-  role: "COACH" | "PLAYER";
+  role: "COACH" | "PLAYER" | "SCOUT";
   ipAddress?: string;
 }) {
   const cleanId = params.athlixId.trim().toUpperCase();
@@ -98,6 +98,41 @@ export async function initiateIdRegistration(params: {
 
     if (u.status === "ACTIVE") {
       throw new ConflictError("This coach account has already been activated. Please proceed to the login page.");
+    }
+
+    recipientEmail = u.email;
+    recipientName = u.name;
+  } else if (params.role === "SCOUT") {
+    const query: Record<string, unknown> = { scoutCode: cleanId };
+    if (resolvedAcademyId) {
+      query.academyId = resolvedAcademyId;
+    }
+
+    const scout = await Scout.findOne(query).populate("userId", "name email status");
+    if (!scout) {
+      throw new NotFoundError(
+        resolvedAcademyId
+          ? "Invalid Scout ID for this academy. Please check the ID provided by your academy administrator."
+          : "Invalid Scout ID. Please check the ID provided by your academy."
+      );
+    }
+
+    if (!resolvedAcademyId && scout.academyId) {
+      resolvedAcademyId = scout.academyId;
+      academy = await Academy.findById(resolvedAcademyId);
+    }
+
+    if (scout.accountStatus === "ACTIVE") {
+      throw new ConflictError("This scout account has already been activated. Please proceed to the login page.");
+    }
+
+    const u = scout.userId as unknown as { name: string; email: string; status: string };
+    if (!u || !u.email) {
+      throw new NotFoundError("No user record found for this scout.");
+    }
+
+    if (u.status === "ACTIVE") {
+      throw new ConflictError("This scout account has already been activated. Please proceed to the login page.");
     }
 
     recipientEmail = u.email;
@@ -160,64 +195,62 @@ export async function initiateIdRegistration(params: {
     throw new AppError("Too many OTP requests for this account. Please wait before requesting another code.", 429);
   }
 
-  // Generate cryptographically secure 6-digit OTP
-  const rawOtp = generateSecureOtp();
-  const otpHash = hashOtp(rawOtp);
+  // Generate 6-digit OTP
+  const otpCode = generateSecureOtp();
+  const otpHash = hashOtp(otpCode);
 
-  // Invalidate any active, unconsumed challenges for this ID
+  // Invalidate previous challenges
   await OtpChallenge.updateMany(
     { identifier: cleanId, consumedAt: null },
-    { $set: { consumedAt: new Date(0) } } // mark superseded
+    { $set: { consumedAt: new Date() } }
   );
 
-  // Save new challenge in MongoDB (5-minute expiration, 5 verification attempts max)
+  // Save new challenge (5-minute expiry)
   const challenge = await OtpChallenge.create({
     identifier: cleanId,
     email: recipientEmail.toLowerCase().trim(),
     role: params.role,
-    otpHash,
+    otpHash: otpHash,
     attempts: 0,
     maxAttempts: 5,
-    expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     ipAddress: params.ipAddress || "",
   });
 
   // Dispatch OTP email via Brevo
   const emailResult = await sendOtpEmail({
     toEmail: recipientEmail,
-    recipientName,
-    otpCode: rawOtp,
+    recipientName: recipientName,
+    otpCode: otpCode,
     role: params.role,
     athlixId: cleanId,
     academyCode: academy?.academyCode,
   });
 
-  // Verify Brevo API acceptance: Never show a false success message if email delivery fails
   if (!emailResult.success) {
-    // Rollback challenge so an undelivered OTP does not lock the user out or linger
+    console.error("[OTP Delivery Warning] Failed to dispatch Brevo OTP email:", emailResult.error);
     await OtpChallenge.deleteOne({ _id: challenge._id });
-    console.error("[Brevo OTP Dispatch Failed]", emailResult.error);
-    throw new AppError("Failed to deliver verification email. Please try again shortly.", 502);
+    throw new AppError("We were unable to deliver your verification email. Please verify your address and try again.", 502);
   }
 
   return {
     success: true,
-    athlixId: cleanId,
-    academyCode: academy?.academyCode || "",
-    academyName: academy?.name || "",
-    role: params.role,
     maskedEmail: maskEmail(recipientEmail),
     expiresAt: challenge.expiresAt,
+    challengeId: challenge._id.toString(),
+    academyCode: academy?.academyCode || "",
+    academyName: academy?.name || "",
   };
 }
 
 /**
- * Step 4: Verify 6-digit OTP.
+ * Step 3 & 4: Cryptographically verify the OTP code.
  */
 export async function verifyRegistrationOtp(params: {
   athlixId: string;
   otp: string;
   academyCode?: string;
+  ipAddress?: string;
 }) {
   const cleanId = params.athlixId.trim().toUpperCase();
 
@@ -227,40 +260,53 @@ export async function verifyRegistrationOtp(params: {
   }).sort({ createdAt: -1 });
 
   if (!challenge) {
-    throw new UnauthorizedError("No active verification code found. Please request a new OTP.");
+    throw new NotFoundError("No active verification code found for this ID. Please request a new code.");
   }
 
-  if (new Date() > new Date(challenge.expiresAt)) {
-    throw new UnauthorizedError("This verification code has expired (5-minute limit). Please request a new OTP.");
+  // Expiration check
+  if (new Date() > challenge.expiresAt) {
+    throw new UnauthorizedError("Verification code has expired. Please request a fresh code.");
   }
 
+  // Maximum attempts check (5 attempts)
   if (challenge.attempts >= challenge.maxAttempts) {
-    throw new UnauthorizedError("Too many incorrect attempts. This code has been invalidated. Please request a new OTP.");
+    throw new UnauthorizedError("Maximum verification attempts exceeded. Please request a new code.");
   }
 
+  // Constant-time OTP comparison
   const isValid = verifyOtp(params.otp, challenge.otpHash);
   if (!isValid) {
     challenge.attempts += 1;
     await challenge.save();
     const remaining = challenge.maxAttempts - challenge.attempts;
-    if (remaining <= 0) {
-      throw new UnauthorizedError("Too many incorrect attempts. This code is invalidated. Please request a new OTP.");
-    }
-    throw new UnauthorizedError(`Incorrect verification code. ${remaining} attempt(s) remaining.`);
+    throw new UnauthorizedError(`Incorrect verification code. ${remaining} attempt${remaining === 1 ? "" : "s"} remaining.`);
   }
 
-  // Resolve academy context if available
   let academyId: string | undefined = undefined;
-  let academyCode: string | undefined = params.academyCode?.trim().toUpperCase();
+  let academyCode: string | undefined = params.academyCode;
 
-  if (academyCode) {
-    const acad = await Academy.findOne({ academyCode });
-    if (acad) {
-      academyId = acad._id.toString();
+  if (params.academyCode) {
+    const academy = await Academy.findOne({ academyCode: params.academyCode.trim().toUpperCase() });
+    if (academy) {
+      academyId = academy._id.toString();
+      academyCode = academy.academyCode;
     }
   }
 
-  // Issue activation token valid for 10 minutes to proceed to Set Password screen
+  if (!academyId) {
+    if (challenge.role === "COACH") {
+      const c = await Coach.findOne({ coachCode: cleanId });
+      if (c) academyId = c.academyId.toString();
+    } else if (challenge.role === "SCOUT") {
+      const s = await Scout.findOne({ scoutCode: cleanId });
+      if (s) academyId = s.academyId.toString();
+    } else {
+      const p = await Player.findOne({ playerCode: cleanId });
+      if (p) academyId = p.academyId.toString();
+    }
+  }
+
+  // Issue 10-minute single-use activation JWT token
   const activationToken = await signActivationToken({
     athlixId: cleanId,
     email: challenge.email,
@@ -273,6 +319,7 @@ export async function verifyRegistrationOtp(params: {
   return {
     success: true,
     activationToken,
+    role: challenge.role,
   };
 }
 
@@ -334,6 +381,21 @@ export async function completeAccountActivation(params: {
 
     userRecord = await User.findById(userIdToActivate);
     academyId = coach.academyId.toString();
+  } else if (payload.role === "SCOUT") {
+    const scoutQuery: Record<string, unknown> = { scoutCode: payload.athlixId };
+    if (payload.academyId) {
+      scoutQuery.academyId = new mongoose.Types.ObjectId(payload.academyId);
+    }
+    const scout = await Scout.findOne(scoutQuery);
+    if (!scout) throw new NotFoundError("Scout record not found");
+
+    userIdToActivate = scout.userId;
+    scout.accountStatus = "ACTIVE";
+    scout.activatedAt = new Date();
+    await scout.save();
+
+    userRecord = await User.findById(userIdToActivate);
+    academyId = scout.academyId.toString();
   } else {
     // Player
     const playerQuery: Record<string, unknown> = { playerCode: payload.athlixId };
@@ -351,7 +413,6 @@ export async function completeAccountActivation(params: {
       userIdToActivate = player.userId;
       userRecord = await User.findById(userIdToActivate);
     } else {
-      // Create user if not created previously
       userIdToActivate = new mongoose.Types.ObjectId();
       userRecord = await User.create({
         _id: userIdToActivate,
@@ -400,7 +461,7 @@ export async function completeAccountActivation(params: {
     console.error("[AuditLog Error]", err);
   }
 
-  // Create authenticated session
+  // Issue authenticated session token
   const sessionToken = await signSessionToken({
     userId: userRecord._id.toString(),
     email: userRecord.email,
@@ -414,23 +475,19 @@ export async function completeAccountActivation(params: {
   const redirectUrl =
     userRecord.role === "COACH"
       ? "/coach"
-      : userRecord.role === "PLAYER"
-      ? "/player"
-      : userRecord.role === "ACADEMY_OWNER"
-      ? "/owner"
       : userRecord.role === "SCOUT"
       ? "/scout"
-      : "/admin";
+      : "/player";
 
   return {
     success: true,
     sessionToken,
+    redirectUrl,
     user: {
       id: userRecord._id.toString(),
-      name: userRecord.name,
       email: userRecord.email,
+      name: userRecord.name,
       role: userRecord.role,
     },
-    redirectUrl,
   };
 }

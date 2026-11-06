@@ -40,7 +40,7 @@ export default function CoachEligibilityPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
-              Trial Eligibility Radar
+              Ready players
             </h1>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
               Mathematical Trial Readiness Audit (&ge; 75% Attendance + &ge; 2 Matches)

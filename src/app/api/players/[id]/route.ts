@@ -3,7 +3,7 @@ import { connectToDatabase } from "@/lib/db/mongodb";
 import { requireAuth } from "@/lib/permissions/auth-guard";
 import { getPlayerById, updatePlayer } from "@/modules/players/player-service";
 import { calculatePlayerEligibilityFromDb } from "@/modules/eligibility/eligibility-service";
-import { MatchParticipant, Attendance } from "@/models";
+import { MatchParticipant, Attendance, Scout } from "@/models";
 import { handleApiError, ForbiddenError } from "@/lib/errors";
 
 export async function GET(
@@ -41,6 +41,28 @@ export async function GET(
 
     // Real-time calculation from actual database records!
     const eligibility = await calculatePlayerEligibilityFromDb(academyId, playerId);
+
+    // 3. Scout can only view their assigned coach's players, AND only if trial-ready (READY)!
+    if (session.role === "SCOUT") {
+      let targetCoachId = session.coachId;
+      if (!targetCoachId) {
+        const scoutRecord = await Scout.findOne({
+          userId: session.userId,
+          academyId,
+        });
+        if (scoutRecord && scoutRecord.assignedCoachId) {
+          targetCoachId = scoutRecord.assignedCoachId.toString();
+        }
+      }
+
+      if (!targetCoachId || player.coachId._id.toString() !== targetCoachId) {
+        throw new ForbiddenError("Unauthorized: Scouts can only view athletes under their assigned coach.");
+      }
+
+      if (eligibility.status !== "READY") {
+        throw new ForbiddenError("Access restricted: Scouts can strictly only view trial-ready (READY) athletes.");
+      }
+    }
 
     // Fetch match participation history
     const matchHistory = await MatchParticipant.find({

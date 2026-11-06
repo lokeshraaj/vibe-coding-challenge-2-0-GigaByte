@@ -65,10 +65,10 @@ export function DashboardSidebar({ role, academyName }: SidebarProps) {
       case "COACH":
         return [
           { label: "Coach Desk", href: "/coach", icon: <LayoutDashboard className="h-4 w-4" /> },
-          { label: "My Squad", href: "/coach/players", icon: <Users className="h-4 w-4" /> },
-          { label: "Practice & Attendance", href: "/coach/sessions", icon: <CalendarCheck className="h-4 w-4" /> },
+          { label: "Player management", href: "/coach/players", icon: <Users className="h-4 w-4" /> },
+          { label: "Sessions & Attendance", href: "/coach/sessions", icon: <CalendarCheck className="h-4 w-4" /> },
           { label: "Matches & Scores", href: "/coach/matches", icon: <Trophy className="h-4 w-4" /> },
-          { label: "Trial Eligibility", href: "/coach/eligibility", icon: <Award className="h-4 w-4" /> },
+          { label: "Ready players", href: "/coach/eligibility", icon: <Award className="h-4 w-4" /> },
         ];
       case "SCOUT":
         return [

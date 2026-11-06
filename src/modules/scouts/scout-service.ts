@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
-import { Scout, Coach, User } from "@/models";
+import { Scout, Coach, User, Academy } from "@/models";
 import { hashPassword } from "@/lib/auth/password";
 import { generateAthlixId } from "@/lib/id-generator";
+import { sendScoutNotificationEmail } from "@/lib/email/brevo";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 
 export interface CreateScoutInput {
@@ -22,14 +23,22 @@ export async function createScout(input: CreateScoutInput) {
     throw new ConflictError("A user with this email already exists.");
   }
 
+  const academy = await Academy.findById(new mongoose.Types.ObjectId(input.academyId));
+  if (!academy) {
+    throw new NotFoundError("Academy not found");
+  }
+
   const coach = await Coach.findOne({
     _id: new mongoose.Types.ObjectId(input.assignedCoachId),
     academyId: new mongoose.Types.ObjectId(input.academyId),
-  });
+  }).populate("userId", "name");
 
   if (!coach) {
     throw new NotFoundError("Assigned coach does not exist in this academy.");
   }
+
+  const coachUserName =
+    (coach.userId as unknown as { name?: string })?.name || "Assigned Coach";
 
   // Generate atomic, collision-free Scout ID (e.g. SCFO001)
   const scoutCode = await generateAthlixId({
@@ -52,7 +61,7 @@ export async function createScout(input: CreateScoutInput) {
     email: normalizedEmail,
     passwordHash: hashedPassword,
     coachId: coach._id, // References assigned coach
-    status: "ACTIVE",
+    status: "PENDING",
   });
 
   const scout = await Scout.create({
@@ -63,12 +72,28 @@ export async function createScout(input: CreateScoutInput) {
     scoutCode: scoutCode,
     organization: input.organization || "",
     experienceYears: input.experienceYears || 0,
+    accountStatus: "PENDING",
     status: "ACTIVE",
   });
 
   // Update coach's primary scout
   coach.assignedScoutId = scout._id as mongoose.Types.ObjectId;
   await coach.save();
+
+  // Send onboarding email containing Academy Name, Academy Code, and Scout ID
+  try {
+    await sendScoutNotificationEmail({
+      toEmail: normalizedEmail,
+      scoutName: input.name.trim(),
+      scoutId: scoutCode,
+      academyName: academy.name,
+      academyCode: academy.academyCode || "",
+      sport: coach.sport,
+      assignedCoachName: coachUserName,
+    });
+  } catch (emailErr) {
+    console.error("[Brevo Scout Email Warning] Notification delivery failed:", emailErr);
+  }
 
   return {
     id: scout._id.toString(),
@@ -80,6 +105,46 @@ export async function createScout(input: CreateScoutInput) {
     organization: scout.organization,
     experienceYears: scout.experienceYears,
   };
+}
+
+export async function resendScoutNotification(academyId: string, scoutId: string) {
+  const scout = await Scout.findOne({
+    _id: new mongoose.Types.ObjectId(scoutId),
+    academyId: new mongoose.Types.ObjectId(academyId),
+  }).populate("userId", "name email");
+
+  if (!scout) {
+    throw new NotFoundError("Scout not found in this academy");
+  }
+
+  const academy = await Academy.findById(new mongoose.Types.ObjectId(academyId));
+  if (!academy) {
+    throw new NotFoundError("Academy not found");
+  }
+
+  let coachUserName = "";
+  let sport = "Multi-Sport";
+  if (scout.assignedCoachId) {
+    const coach = await Coach.findById(scout.assignedCoachId).populate("userId", "name");
+    if (coach) {
+      sport = coach.sport;
+      coachUserName = (coach.userId as unknown as { name?: string })?.name || "";
+    }
+  }
+
+  const u = scout.userId as unknown as { name: string; email: string };
+
+  const result = await sendScoutNotificationEmail({
+    toEmail: u.email,
+    scoutName: u.name,
+    scoutId: scout.scoutCode || "",
+    academyName: academy.name,
+    academyCode: academy.academyCode || "",
+    sport,
+    assignedCoachName: coachUserName,
+  });
+
+  return { success: true, result };
 }
 
 export async function reassignScout(
@@ -105,7 +170,7 @@ export async function reassignScout(
     throw new NotFoundError("Target coach not found in this academy");
   }
 
-  // Remove scout from previous coach if assigned
+  // Remove old coach assignment if present
   if (scout.assignedCoachId) {
     await Coach.updateOne(
       { _id: scout.assignedCoachId },
@@ -160,6 +225,7 @@ export async function listScoutsByAcademy(academyId: string) {
         organization: s.organization,
         experienceYears: s.experienceYears,
         status: s.status,
+        accountStatus: s.accountStatus || "ACTIVE",
         assignedCoachId: s.assignedCoachId?._id ? s.assignedCoachId._id.toString() : s.assignedCoachId?.toString(),
         coachName,
         coachSport,

@@ -131,6 +131,13 @@ export async function loginUser(input: LoginInput): Promise<{
     }
   }
 
+  if (user.role === "SCOUT" && !coachId) {
+    const scoutDoc = await Scout.findOne({ userId: user._id });
+    if (scoutDoc && scoutDoc.assignedCoachId) {
+      coachId = scoutDoc.assignedCoachId.toString();
+    }
+  }
+
   // Update last login timestamp without blocking response
   User.findByIdAndUpdate(user._id, { "metadata.lastLoginAt": new Date() }).exec().catch(() => {});
 

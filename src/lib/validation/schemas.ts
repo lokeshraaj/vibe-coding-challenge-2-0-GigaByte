@@ -63,7 +63,7 @@ export const verifyAcademyCodeSchema = z.object({
 export const verifyIdSchema = z.object({
   academyCode: z.string().trim().toUpperCase().optional(),
   athlixId: z.string().min(5, "Valid ATHLIX ID is required").trim().toUpperCase(),
-  role: z.enum(["COACH", "PLAYER"]),
+  role: z.enum(["COACH", "PLAYER", "SCOUT"]),
 });
 
 export const verifyOtpSchema = z.object({
@@ -83,6 +83,35 @@ export const resendOtpSchema = z.object({
 export const setPasswordSchema = z
   .object({
     activationToken: z.string().min(1, "Activation token is required"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+export const forgotPasswordInitiateSchema = z.object({
+  academyCode: z.string().trim().toUpperCase().optional(),
+  identifier: z.string().min(3, "Identifier (ID or Email) is required").trim(),
+});
+
+export const forgotPasswordVerifySchema = z.object({
+  challengeId: z.string().min(1, "Challenge ID is required"),
+  otp: z
+    .string()
+    .length(6, "OTP must be exactly 6 digits")
+    .regex(/^\d+$/, "OTP must contain only numbers"),
+});
+
+export const forgotPasswordResetSchema = z
+  .object({
+    resetToken: z.string().min(1, "Reset token is required"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -174,3 +203,9 @@ export const matchCreateSchema = z.object({
   notes: z.string().optional(),
   participants: z.array(matchParticipantSchema).min(1, "Match must have at least one participating player"),
 });
+
+// Semantic & backward-compatibility aliases
+export const matchSchema = matchCreateSchema;
+export const sessionSchema = sessionCreateSchema;
+export const batchAttendanceSchema = attendanceBatchSchema;
+export const attendanceItemSchema = attendanceRecordItemSchema;

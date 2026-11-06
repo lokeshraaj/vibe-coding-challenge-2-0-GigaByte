@@ -7,7 +7,9 @@ export interface IScoutDocument extends Document {
   scoutCode?: string;
   organization?: string;
   experienceYears?: number;
+  accountStatus: "PENDING" | "ACTIVE" | "INACTIVE";
   status: "ACTIVE" | "INACTIVE";
+  activatedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,11 +22,17 @@ const ScoutSchema = new Schema<IScoutDocument>(
     scoutCode: { type: String, sparse: true, uppercase: true, trim: true },
     organization: { type: String, default: "" },
     experienceYears: { type: Number, default: 0 },
+    accountStatus: {
+      type: String,
+      enum: ["PENDING", "ACTIVE", "INACTIVE"],
+      default: "PENDING",
+    },
     status: {
       type: String,
       enum: ["ACTIVE", "INACTIVE"],
       default: "ACTIVE",
     },
+    activatedAt: { type: Date, default: null },
   },
   {
     timestamps: true,

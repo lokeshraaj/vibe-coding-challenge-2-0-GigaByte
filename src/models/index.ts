@@ -13,6 +13,8 @@ export * from "./AuditLog";
 export * from "./IdCounter";
 export * from "./AcademyCodeCounter";
 export * from "./OtpChallenge";
+export * from "./PendingAcademyRegistration";
+export * from "./PasswordResetChallenge";
 export * from "./SystemProvisioning";
 export * from "./Complaint";
 export * from "./PlatformSetting";

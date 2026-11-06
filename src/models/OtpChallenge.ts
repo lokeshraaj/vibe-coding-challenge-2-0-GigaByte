@@ -1,9 +1,9 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IOtpChallengeDocument extends Document {
-  identifier: string; // Coach ID (e.g. DCOFO001), Player ID (e.g. DPLFO001), or email
+  identifier: string; // Coach ID (e.g. COFO001), Player ID (e.g. PLFO001), Scout ID (e.g. SCFO001), or email
   email: string;
-  role: "COACH" | "PLAYER";
+  role: "COACH" | "PLAYER" | "SCOUT";
   otpHash: string; // Cryptographic SHA-256 hash of the 6-digit OTP
   attempts: number;
   maxAttempts: number;
@@ -20,7 +20,7 @@ const OtpChallengeSchema = new Schema<IOtpChallengeDocument>(
     email: { type: String, required: true, lowercase: true, trim: true },
     role: {
       type: String,
-      enum: ["COACH", "PLAYER"],
+      enum: ["COACH", "PLAYER", "SCOUT"],
       required: true,
     },
     otpHash: { type: String, required: true },

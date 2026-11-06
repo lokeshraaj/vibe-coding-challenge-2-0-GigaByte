@@ -8,14 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { signIn } from "next-auth/react";
-import { Building2, IdCard, Lock } from "lucide-react";
+import { Building2, IdCard, Lock, Eye, EyeOff, UserPlus } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [academyCode, setAcademyCode] = useState("");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -39,13 +40,12 @@ function LoginForm() {
           }
         }
       } catch {
-        // Not authenticated, stay on page
+        // Not authenticated, stay on login page
       } finally {
         setCheckingSession(false);
       }
     }
 
-    // Check for auth errors in search params (e.g. from OAuth callbacks)
     const errorParam = searchParams.get("error");
     if (errorParam) {
       if (errorParam === "OAuthSignin" || errorParam === "OAuthCallback") {
@@ -70,19 +70,19 @@ function LoginForm() {
     }
   };
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanIdentifier = email.trim();
-    const cleanAcademyCode = academyCode.trim().toUpperCase();
+    const cleanId = identifier.trim();
+    const cleanCode = academyCode.trim().toUpperCase();
 
-    if (!cleanIdentifier || !password) {
-      toast.error("Please enter both ID/email and password");
+    if (!cleanId || !password) {
+      toast.error("Please enter your Individual ID and password");
       return;
     }
 
-    // If identifier is not an email, Academy Code is strictly required
-    if (!cleanIdentifier.includes("@") && !cleanAcademyCode) {
-      toast.error("Academy Code is required for Coach and Player ID sign-in");
+    // Academy Code required for all Coach, Player and Scout individual ID logins
+    if (!cleanId.includes("@") && !cleanCode) {
+      toast.error("Academy Code is required for Coach, Player and Scout ID sign-in");
       return;
     }
 
@@ -92,21 +92,20 @@ function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          academyCode: cleanAcademyCode || undefined,
-          email: cleanIdentifier,
+          academyCode: cleanCode || undefined,
+          email: cleanId,
           password,
         }),
       });
 
       const data = await res.json();
-
       if (!res.ok) {
-        throw new Error(data.error || "Login failed");
+        throw new Error(data.error || "Invalid credentials");
       }
 
       toast.success(`Welcome back, ${data.data.user.name}!`);
 
-      // Role-based routing
+      // Role-based dashboard redirect
       const role = data.data.user.role;
       if (role === "PLATFORM_ADMIN" || role === "SUPER_ADMIN") router.push("/admin");
       else if (role === "ACADEMY_OWNER") router.push("/owner");
@@ -123,23 +122,10 @@ function LoginForm() {
     }
   };
 
-  // Quick fill helper for convenience during demos & review
-  const handleDemoFill = (demoEmail: string, demoPass: string, demoAcadCode: string = "") => {
-    setAcademyCode(demoAcadCode);
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    toast.info(`Filled credentials for ${demoEmail}`);
-  };
-
   if (checkingSession) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center bg-[#F4F3EE]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#DCE1E3] border-t-[#101820]" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-[#8B969E]">
-            Checking Session...
-          </span>
-        </div>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#DCE1E3] border-t-[#101820]" />
       </div>
     );
   }
@@ -156,32 +142,29 @@ function LoginForm() {
       </Link>
 
       <Card className="w-full max-w-md border-[#DCE1E3] bg-white shadow-sm">
-        <CardHeader className="space-y-1.5 pb-4">
+        <CardHeader className="space-y-1.5 border-b border-[#DCE1E3] pb-5">
           <CardTitle className="text-2xl font-extrabold text-[#101820] tracking-tight">
-            Welcome to ATHLIX
+            Sign In to ATHLIX
           </CardTitle>
           <CardDescription className="text-sm text-[#8B969E]">
-            Sign in to manage your athletic journey.
+            Enter your Academy Code, Individual ID, and password to access your dashboard.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-5">
-          {/* Continue with Google Button */}
+        <CardContent className="pt-6 space-y-5">
+          {/* Google OAuth Button */}
           <Button
             type="button"
             variant="outline"
-            size="lg"
+            className="w-full h-11 text-xs font-semibold border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE] transition-colors gap-3"
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading || isLoading}
-            className="w-full flex items-center justify-center py-2.5 border-[#DCE1E3] bg-white text-[#101820] font-semibold hover:bg-[#F4F3EE] shadow-sm transition-all"
           >
             {isGoogleLoading ? (
-              <span className="text-xs font-bold uppercase tracking-wider text-[#8B969E]">
-                Connecting to Google...
-              </span>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#101820] border-t-transparent" />
             ) : (
               <>
-                <svg className="h-4 w-4 mr-2.5 shrink-0" viewBox="0 0 24 24">
+                <svg className="h-4 w-4" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -208,12 +191,12 @@ function LoginForm() {
           <div className="relative flex items-center justify-center">
             <div className="w-full border-t border-[#DCE1E3]" />
             <span className="absolute bg-white px-3 text-[11px] font-semibold uppercase tracking-wider text-[#8B969E]">
-              Or continue with credentials
+              Or sign in with ID
             </span>
           </div>
 
-          {/* Academy Code + Individual ID / Email + Password Form */}
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
+          {/* Authentication Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Field 1: Academy Code */}
             <div className="space-y-1">
               <label
@@ -226,52 +209,71 @@ function LoginForm() {
               <Input
                 id="academyCode"
                 type="text"
-                placeholder="e.g. BI0001 or JH0001"
+                placeholder="e.g. JH0001 or BI0001"
                 value={academyCode}
                 onChange={(e) => setAcademyCode(e.target.value.toUpperCase())}
                 className="font-mono uppercase"
               />
               <p className="text-[11px] text-[#8B969E]">
-                Required for Coach and Player ID sign-in. (Leave blank for Platform Admin / Owner email logins)
+                Required for Coach, Player and Scout logins. (Optional for Super Admin / Owner email logins)
               </p>
             </div>
 
             {/* Field 2: Individual ID or Email */}
             <div className="space-y-1">
               <label
-                htmlFor="email"
+                htmlFor="identifier"
                 className="text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-1.5"
               >
                 <IdCard className="h-3.5 w-3.5" />
-                <span>Coach ID / Player ID or Email</span>
+                <span>Coach ID / Player ID / Scout ID</span>
               </label>
               <Input
-                id="email"
+                id="identifier"
                 type="text"
-                placeholder="e.g. COFO001, PLFO001, or owner@apex.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g. COFO001, PLFO001, SCFO001, or email"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
               />
             </div>
 
             {/* Field 3: Password */}
             <div className="space-y-1">
-              <label
-                htmlFor="password"
-                className="text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-1.5"
-              >
-                <Lock className="h-3.5 w-3.5" />
-                <span>Password</span>
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="password"
+                  className="text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-1.5"
+                >
+                  <Lock className="h-3.5 w-3.5" />
+                  <span>Password</span>
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-semibold text-[#8B969E] hover:text-[#101820] hover:underline"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B969E] hover:text-[#101820] focus:outline-none"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             <Button
@@ -285,99 +287,34 @@ function LoginForm() {
             </Button>
           </form>
 
-          {/* Registration Options */}
-          <div className="pt-3 border-t border-[#DCE1E3] space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#8B969E] block text-center">
-              New to ATHLIX? Complete Your Activation
-            </span>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <Link
-                href="/register/coach"
-                className="p-2.5 rounded-lg bg-[#FAF9F5] border border-[#DCE1E3] text-center hover:border-[#101820] hover:bg-[#F4F3EE] transition-colors"
-              >
-                <div className="font-bold text-[#101820]">Register Coach</div>
-                <div className="text-[10px] text-[#8B969E]">With Academy Code & ID</div>
-              </Link>
-              <Link
-                href="/register/player"
-                className="p-2.5 rounded-lg bg-[#FAF9F5] border border-[#DCE1E3] text-center hover:border-[#101820] hover:bg-[#F4F3EE] transition-colors"
-              >
-                <div className="font-bold text-[#101820]">Register Athlete</div>
-                <div className="text-[10px] text-[#8B969E]">With Academy Code & ID</div>
+          {/* Unified Registration Entry Point */}
+          <div className="pt-4 border-t border-[#DCE1E3] space-y-3">
+            <div className="text-center">
+              <span className="text-[11px] font-semibold text-[#8B969E] block mb-2">
+                Need to activate your profile or join an academy?
+              </span>
+              <Link href="/register" className="w-full block">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  className="w-full text-xs font-bold gap-2 border-[#DCE1E3] bg-[#FAF9F5] text-[#101820] hover:bg-[#F4F3EE] hover:border-[#101820]"
+                >
+                  <UserPlus className="h-4 w-4 text-[#101820]" />
+                  <span>Register (Coach, Player or Scout)</span>
+                </Button>
               </Link>
             </div>
-            <div className="text-center pt-1">
+
+            <div className="text-center text-xs text-[#8B969E] pt-1">
+              Want to register a new sports academy?{" "}
               <Link
                 href="/register-academy"
-                className="text-xs font-bold text-[#101820] hover:underline uppercase tracking-wider"
+                className="font-bold text-[#101820] hover:underline uppercase tracking-wider"
               >
-                + Register New Sports Academy
+                Register Academy
               </Link>
             </div>
-          </div>
-
-          {/* Quick Fill Demo Roles */}
-          <div className="pt-4 border-t border-[#DCE1E3] space-y-2.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#8B969E] block">
-              Quick-Fill Demo Credentials (Seed Data)
-            </span>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleDemoFill("owner@apex.com", "ApexOwner2026!", "GR0001")}
-                className="p-2.5 rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-left hover:border-[#101820] transition-colors"
-              >
-                <div className="font-bold text-[#101820]">Academy Owner</div>
-                <div className="text-[10px] text-[#8B969E] truncate">owner@apex.com</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoFill("COFO001", "CoachMarcus2026!", "GR0001")}
-                className="p-2.5 rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-left hover:border-[#101820] transition-colors"
-              >
-                <div className="font-bold text-[#101820]">Head Coach (ID)</div>
-                <div className="text-[10px] text-[#8B969E] truncate">COFO001 [GR0001]</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoFill("scout.elena@apex.com", "ScoutElena2026!", "GR0001")}
-                className="p-2.5 rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-left hover:border-[#101820] transition-colors"
-              >
-                <div className="font-bold text-[#101820]">Assigned Scout</div>
-                <div className="text-[10px] text-[#8B969E] truncate">scout.elena@apex.com</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoFill("PLFO001", "PlayerLeo2026!", "GR0001")}
-                className="p-2.5 rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-left hover:border-[#101820] transition-colors"
-              >
-                <div className="font-bold text-[#101820]">Player (ID)</div>
-                <div className="text-[10px] text-[#8B969E] truncate">PLFO001 [GR0001]</div>
-              </button>
-            </div>
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={() => handleDemoFill("superadmin@athlix.com", "AthlixAdmin2026!", "")}
-                className="w-full p-2 rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-left hover:border-[#101820] transition-colors text-xs"
-              >
-                <div className="font-bold text-[#101820]">Platform Super Admin</div>
-                <div className="text-[10px] text-[#8B969E]">superadmin@athlix.com (No Academy Code required)</div>
-              </button>
-            </div>
-          </div>
-
-          <div className="text-center text-xs text-[#8B969E] pt-2">
-            New sports academy?{" "}
-            <Link
-              href="/register-academy"
-              className="font-bold text-[#101820] hover:underline uppercase tracking-wider"
-            >
-              Register Academy
-            </Link>
           </div>
         </CardContent>
       </Card>

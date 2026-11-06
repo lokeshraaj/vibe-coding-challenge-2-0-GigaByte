@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 interface IdRegistrationFlowProps {
-  role: "COACH" | "PLAYER";
+  role: "COACH" | "PLAYER" | "SCOUT";
   title: string;
   subtitle: string;
   idLabel: string;

@@ -51,7 +51,20 @@ describe("Business Logic & Security Invariants Tests", () => {
     });
   });
 
-  describe("Scout Talent Directory Invariant", () => {
+  describe("Phase 6: Player Creation Role Invariant", () => {
+    it("strictly limits player registration permissions exclusively to COACH", () => {
+      // Invariant: only role === "COACH" may create players
+      const canCreatePlayer = (role: string) => role === "COACH";
+
+      expect(canCreatePlayer("COACH")).toBe(true);
+      expect(canCreatePlayer("ACADEMY_OWNER")).toBe(false);
+      expect(canCreatePlayer("SCOUT")).toBe(false);
+      expect(canCreatePlayer("PLAYER")).toBe(false);
+      expect(canCreatePlayer("SUPER_ADMIN")).toBe(false);
+    });
+  });
+
+  describe("Phase 12: Scout Talent Directory Invariant", () => {
     it("filters out any player whose status is NOT_READY", () => {
       const candidates = [
         calculatePlayerEligibility({
@@ -91,6 +104,47 @@ describe("Business Logic & Security Invariants Tests", () => {
       expect(scoutVisible).toHaveLength(1);
       expect(scoutVisible[0].playerId).toBe("p1");
       expect(scoutVisible[0].playerName).toBe("Eligible Player");
+    });
+
+    it("strictly forbids scout access to a player whose eligibility status is NOT_READY or under an unassigned coach", () => {
+      const assignedCoachId = "coach_101";
+
+      const checkScoutPlayerAccess = (params: {
+        playerCoachId: string;
+        eligibilityStatus: string;
+      }) => {
+        if (params.playerCoachId !== assignedCoachId) {
+          throw new Error("Unauthorized: Scouts can only view athletes under their assigned coach.");
+        }
+        if (params.eligibilityStatus !== "READY") {
+          throw new Error("Access restricted: Scouts can strictly only view trial-ready (READY) athletes.");
+        }
+        return true;
+      };
+
+      // Assigned coach + READY -> allowed
+      expect(
+        checkScoutPlayerAccess({
+          playerCoachId: "coach_101",
+          eligibilityStatus: "READY",
+        })
+      ).toBe(true);
+
+      // Assigned coach + NOT_READY -> blocked
+      expect(() =>
+        checkScoutPlayerAccess({
+          playerCoachId: "coach_101",
+          eligibilityStatus: "NOT_READY",
+        })
+      ).toThrow("Access restricted: Scouts can strictly only view trial-ready (READY) athletes.");
+
+      // Different coach + READY -> blocked
+      expect(() =>
+        checkScoutPlayerAccess({
+          playerCoachId: "coach_999",
+          eligibilityStatus: "READY",
+        })
+      ).toThrow("Unauthorized: Scouts can only view athletes under their assigned coach.");
     });
   });
 

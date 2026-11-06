@@ -3,6 +3,8 @@ import { connectToDatabase } from "@/lib/db/mongodb";
 import { requireAuth } from "@/lib/permissions/auth-guard";
 import { playerSchema } from "@/lib/validation/schemas";
 import { createPlayer, listPlayers } from "@/modules/players/player-service";
+import { getScoutTalentDirectory } from "@/modules/eligibility/eligibility-service";
+import { Scout } from "@/models";
 import { handleApiError, ForbiddenError } from "@/lib/errors";
 
 export async function GET(req: Request) {
@@ -29,6 +31,66 @@ export async function GET(req: Request) {
       coachId = session.coachId;
     }
 
+    // Strict scout restriction: Scout can ONLY see READY players under their assigned coach!
+    if (session.role === "SCOUT") {
+      let targetCoachId = session.coachId;
+      if (!targetCoachId) {
+        const scoutRecord = await Scout.findOne({
+          userId: session.userId,
+          academyId,
+        });
+        if (scoutRecord && scoutRecord.assignedCoachId) {
+          targetCoachId = scoutRecord.assignedCoachId.toString();
+        }
+      }
+
+      if (!targetCoachId) {
+        return NextResponse.json({
+          success: true,
+          items: [],
+          pagination: {
+            page: 1,
+            limit: 20,
+            totalCount: 0,
+            totalPages: 0,
+            hasNextPage: false,
+            hasPrevPage: false,
+          },
+        });
+      }
+
+      // Fetch ONLY trial-ready players under assigned coach
+      const eligiblePlayers = await getScoutTalentDirectory(academyId, targetCoachId, {
+        sport,
+        search,
+      });
+
+      const mappedItems = eligiblePlayers.map((ep) => ({
+        id: ep.playerId,
+        name: ep.playerName,
+        sport: ep.sport,
+        position: ep.position,
+        eligibilityStatus: ep.status,
+        attendancePercentage: ep.attendancePercentage,
+        matchesPlayed: ep.matchesPlayed,
+        coachId: targetCoachId,
+        status: "ACTIVE",
+      }));
+
+      return NextResponse.json({
+        success: true,
+        items: mappedItems,
+        pagination: {
+          page: 1,
+          limit: Math.max(1, mappedItems.length),
+          totalCount: mappedItems.length,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+      });
+    }
+
     const result = await listPlayers({
       academyId,
       coachId,
@@ -51,8 +113,12 @@ export async function POST(req: Request) {
     const session = await requireAuth(req);
     await connectToDatabase();
 
-    if (session.role !== "COACH" && session.role !== "ACADEMY_OWNER" && session.role !== "PLATFORM_ADMIN") {
-      throw new ForbiddenError("Only coaches and academy administrators can register players.");
+    // Strict Invariant: Player creation MUST remain exclusively under Coach.
+    // Academy Admin CANNOT add players. Scout CANNOT add players.
+    if (session.role !== "COACH") {
+      throw new ForbiddenError(
+        "Player creation is restricted exclusively to coaches. Academy administrators and scouts are not permitted to add players."
+      );
     }
 
     const academyId = session.academyId;
@@ -60,23 +126,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Academy context missing" }, { status: 400 });
     }
 
+    if (!session.coachId) {
+      throw new ForbiddenError("No coach profile associated with this account.");
+    }
+
     const body = await req.json();
     const validatedData = playerSchema.parse(body);
-
-    // Enforce coachId scoping: If actor is a coach, force coachId to their own ID!
-    let assignedCoachId = validatedData.coachId;
-    if (session.role === "COACH") {
-      if (!session.coachId) {
-        throw new ForbiddenError("No coach profile associated with this account.");
-      }
-      assignedCoachId = session.coachId;
-    }
 
     const player = await createPlayer(
       {
         academyId,
         ...validatedData,
-        coachId: assignedCoachId,
+        coachId: session.coachId,
       },
       session.userId
     );
