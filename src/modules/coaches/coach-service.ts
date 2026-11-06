@@ -22,7 +22,16 @@ export async function createCoach(input: CreateCoachInput, actorId?: string) {
 
   const existingUser = await User.findOne({ email: normalizedEmail });
   if (existingUser) {
-    throw new ConflictError("A user with this email already exists.");
+    // If the user was left in PENDING status without an actual Coach profile
+    // (e.g. from an aborted or crashed previous attempt), clean up the orphan record so registration succeeds.
+    const hasCoachProfile = await Coach.exists({
+      $or: [{ userId: existingUser._id }, { _id: existingUser.coachId }],
+    });
+    if (!hasCoachProfile && existingUser.status === "PENDING" && existingUser.role === "COACH") {
+      await User.deleteOne({ _id: existingUser._id });
+    } else {
+      throw new ConflictError("A user with this email already exists.");
+    }
   }
 
   const academy = await Academy.findById(new mongoose.Types.ObjectId(input.academyId));
@@ -40,34 +49,48 @@ export async function createCoach(input: CreateCoachInput, actorId?: string) {
   const userId = new mongoose.Types.ObjectId();
   const coachId = new mongoose.Types.ObjectId();
 
-  // Create pending user account (must activate via ID + OTP before setting password)
-  const user = await User.create({
-    _id: userId,
-    academyId: new mongoose.Types.ObjectId(input.academyId),
-    role: "COACH",
-    name: input.name.trim(),
-    email: normalizedEmail,
-    coachId: coachId,
-    status: "PENDING",
-    metadata: {
-      phone: input.phone?.trim() || "",
-    },
-  });
+  let user: any = null;
+  let coach: any = null;
 
-  const coach = await Coach.create({
-    _id: coachId,
-    academyId: new mongoose.Types.ObjectId(input.academyId),
-    userId: userId,
-    coachCode: coachCode,
-    phone: input.phone?.trim() || "",
-    sport: input.sport.trim(),
-    assignedSports: input.assignedSports && input.assignedSports.length > 0 ? input.assignedSports : [input.sport.trim()],
-    specialization: input.specialization || "",
-    experienceYears: input.experienceYears || 0,
-    bio: input.bio || "",
-    accountStatus: "PENDING",
-    status: "ACTIVE",
-  });
+  try {
+    // Create pending user account (must activate via ID + OTP before setting password)
+    user = await User.create({
+      _id: userId,
+      academyId: new mongoose.Types.ObjectId(input.academyId),
+      role: "COACH",
+      name: input.name.trim(),
+      email: normalizedEmail,
+      coachId: coachId,
+      status: "PENDING",
+      metadata: {
+        phone: input.phone?.trim() || "",
+      },
+    });
+
+    coach = await Coach.create({
+      _id: coachId,
+      academyId: new mongoose.Types.ObjectId(input.academyId),
+      userId: userId,
+      coachCode: coachCode,
+      phone: input.phone?.trim() || "",
+      sport: input.sport.trim(),
+      assignedSports:
+        input.assignedSports && input.assignedSports.length > 0
+          ? input.assignedSports
+          : [input.sport.trim()],
+      specialization: input.specialization || "",
+      experienceYears: input.experienceYears || 0,
+      bio: input.bio || "",
+      accountStatus: "PENDING",
+      status: "ACTIVE",
+    });
+  } catch (creationErr) {
+    // Automatic rollback: If coach creation fails, clean up the newly created user to prevent orphaned records
+    if (user?._id) {
+      await User.deleteOne({ _id: user._id }).catch(() => {});
+    }
+    throw creationErr;
+  }
 
   // Record audit log
   try {
@@ -174,7 +197,12 @@ export async function listCoachesByAcademy(academyId: string) {
         }
       }
 
-      const u = c.userId as unknown as { name: string; email: string; status: string; metadata?: { phone?: string } };
+      const u = c.userId as unknown as {
+        name: string;
+        email: string;
+        status: string;
+        metadata?: { phone?: string };
+      };
 
       return {
         id: c._id.toString(),

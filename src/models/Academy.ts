@@ -17,7 +17,11 @@ export interface IAcademyDocument extends Document {
   contactEmail: string;
   contactPhone: string;
   ownerId: mongoose.Types.ObjectId;
-  status: "PENDING" | "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
+  sports?: string[];
+  status: "PENDING" | "ACTIVE" | "SUSPENDED" | "DEACTIVATED" | "BLOCKED";
+  blockedReason?: string;
+  blockedAt?: Date;
+  blockedBy?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,11 +48,15 @@ const AcademySchema = new Schema<IAcademyDocument>(
     contactEmail: { type: String, required: true, lowercase: true, trim: true },
     contactPhone: { type: String, required: true, trim: true },
     ownerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    sports: [{ type: String, trim: true }],
     status: {
       type: String,
-      enum: ["PENDING", "ACTIVE", "SUSPENDED", "DEACTIVATED"],
+      enum: ["PENDING", "ACTIVE", "SUSPENDED", "DEACTIVATED", "BLOCKED"],
       default: "ACTIVE",
     },
+    blockedReason: { type: String, default: "" },
+    blockedAt: { type: Date, default: null },
+    blockedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
   },
   {
     timestamps: true,

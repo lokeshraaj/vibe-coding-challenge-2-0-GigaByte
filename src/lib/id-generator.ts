@@ -111,23 +111,39 @@ export async function generateAthlixId(params: {
       ? "PL"
       : "SC";
 
-  // Atomically increment counter in MongoDB scoped per academy, userType, and sport
-  const counter = await IdCounter.findOneAndUpdate(
-    {
-      academyId: academyObjectId,
-      userType: params.userType,
-      sportCode: sportCode,
-    },
-    {
-      $inc: { seq: 1 },
-    },
-    {
-      upsert: true,
-      new: true,
-      setDefaultsOnInsert: true,
-    }
-  );
+  // Atomically increment counter in MongoDB scoped per academy, userType, and sport.
+  // Includes collision check to automatically advance if an ID was pre-existing in this academy.
+  while (true) {
+    const counter = await IdCounter.findOneAndUpdate(
+      {
+        academyId: academyObjectId,
+        userType: params.userType,
+        sportCode: sportCode,
+      },
+      {
+        $inc: { seq: 1 },
+      },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
 
-  const serial = String(counter.seq).padStart(3, "0");
-  return `${typeCode}${sportCode}${serial}`;
+    const serial = String(counter.seq).padStart(3, "0");
+    const candidateId = `${typeCode}${sportCode}${serial}`;
+
+    let exists = false;
+    if (params.userType === "COACH") {
+      const { Coach } = await import("@/models/Coach");
+      exists = !!(await Coach.exists({ academyId: academyObjectId, coachCode: candidateId }));
+    } else if (params.userType === "PLAYER") {
+      const { Player } = await import("@/models/Player");
+      exists = !!(await Player.exists({ academyId: academyObjectId, playerCode: candidateId }));
+    }
+
+    if (!exists) {
+      return candidateId;
+    }
+  }
 }

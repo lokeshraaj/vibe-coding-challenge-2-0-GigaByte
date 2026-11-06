@@ -10,6 +10,10 @@ export interface IUserDocument extends Document {
   status: UserStatus;
   coachId?: mongoose.Types.ObjectId;
   playerId?: mongoose.Types.ObjectId;
+  adminPermissions?: string[];
+  blockedReason?: string;
+  blockedAt?: Date;
+  blockedBy?: mongoose.Types.ObjectId;
   metadata?: {
     phone?: string;
     avatarUrl?: string;
@@ -32,11 +36,15 @@ const UserSchema = new Schema<IUserDocument>(
     passwordHash: { type: String, select: false },
     status: {
       type: String,
-      enum: ["ACTIVE", "PENDING", "INVITED", "DEACTIVATED"],
+      enum: ["ACTIVE", "PENDING", "INVITED", "DEACTIVATED", "BLOCKED"],
       default: "ACTIVE",
     },
     coachId: { type: Schema.Types.ObjectId, ref: "Coach", default: null },
     playerId: { type: Schema.Types.ObjectId, ref: "Player", default: null },
+    adminPermissions: [{ type: String, trim: true }],
+    blockedReason: { type: String, default: "" },
+    blockedAt: { type: Date, default: null },
+    blockedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     metadata: {
       phone: { type: String, default: "" },
       avatarUrl: { type: String, default: "" },
@@ -50,6 +58,7 @@ const UserSchema = new Schema<IUserDocument>(
 
 UserSchema.index({ academyId: 1, role: 1 });
 UserSchema.index({ academyId: 1, status: 1 });
+UserSchema.index({ status: 1 });
 
 export const User: Model<IUserDocument> =
   mongoose.models.User || mongoose.model<IUserDocument>("User", UserSchema);

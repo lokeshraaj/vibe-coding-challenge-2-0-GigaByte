@@ -13,6 +13,10 @@ import {
   Award,
   ChevronLeft,
   ChevronRight,
+  AlertTriangle,
+  ShieldAlert,
+  Bell,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/types";
@@ -38,8 +42,16 @@ export function DashboardSidebar({ role, academyName }: SidebarProps) {
       case "PLATFORM_ADMIN":
       case "SUPER_ADMIN":
         return [
-          { label: "Platform Overview", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" /> },
-          { label: "Academies Directory", href: "/admin", icon: <Building2 className="h-4 w-4" /> },
+          { label: "Platform HQ", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" /> },
+          { label: "Academies", href: "/admin/academies", icon: <Building2 className="h-4 w-4" /> },
+          { label: "Coaches", href: "/admin/coaches", icon: <UserCheck className="h-4 w-4" /> },
+          { label: "Users Directory", href: "/admin/users", icon: <Users className="h-4 w-4" /> },
+          { label: "Verification", href: "/admin/verification", icon: <UserCheck className="h-4 w-4" /> },
+          { label: "Global Matches", href: "/admin/matches", icon: <Trophy className="h-4 w-4" /> },
+          { label: "Complaints & Reports", href: "/admin/complaints", icon: <AlertTriangle className="h-4 w-4" /> },
+          { label: "Security & Audit", href: "/admin/security", icon: <ShieldAlert className="h-4 w-4" /> },
+          { label: "Announcements", href: "/admin/announcements", icon: <Bell className="h-4 w-4" /> },
+          { label: "Platform Settings", href: "/admin/settings", icon: <Settings className="h-4 w-4" /> },
         ];
       case "ACADEMY_OWNER":
         return [
@@ -97,7 +109,9 @@ export function DashboardSidebar({ role, academyName }: SidebarProps) {
                 className="h-6 w-auto object-contain object-left"
               />
               <span className="text-[9px] font-bold tracking-widest text-[#8B969E] uppercase mt-1 truncate max-w-[150px]">
-                {academyName || "SPORTS PLATFORM"}
+                {role === "SUPER_ADMIN" || role === "PLATFORM_ADMIN"
+                  ? "SUPER ADMIN HQ"
+                  : academyName || "SPORTS PLATFORM"}
               </span>
             </div>
           )}

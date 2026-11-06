@@ -6,14 +6,15 @@ export type UserRole =
   | 'SCOUT'
   | 'PLAYER';
 
-export type AcademyStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
-export type UserStatus = 'ACTIVE' | 'PENDING' | 'INVITED' | 'DEACTIVATED';
-export type PlayerStatus = 'ACTIVE' | 'INJURED' | 'DEACTIVATED';
+export type AcademyStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED' | 'BLOCKED';
+export type UserStatus = 'ACTIVE' | 'PENDING' | 'INVITED' | 'DEACTIVATED' | 'BLOCKED';
+export type PlayerStatus = 'ACTIVE' | 'INJURED' | 'DEACTIVATED' | 'BLOCKED';
 export type SessionStatus = 'OPEN' | 'CLOSED';
 export type AttendanceStatus = 'PRESENT' | 'ABSENT';
 export type MatchResult = 'WON' | 'LOST' | 'DRAW' | 'ABANDONED';
 export type EligibilityStatus = 'READY' | 'NOT_READY';
 export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
+export type ComplaintStatus = 'OPEN' | 'UNDER_REVIEW' | 'ACTION_REQUIRED' | 'RESOLVED' | 'REJECTED';
 
 export interface LocationData {
   address?: string;
@@ -235,4 +236,64 @@ export interface AuthSessionPayload {
   playerId?: string;
   iat?: number;
   exp?: number;
+}
+
+export interface IComplaint {
+  _id: string;
+  reporterId: string;
+  reporterRole: UserRole;
+  targetType: 'USER' | 'ACADEMY' | 'COACH' | 'PLAYER' | 'MATCH' | 'OTHER';
+  targetId: string;
+  targetName?: string;
+  academyId?: string;
+  subject: string;
+  category: 'CONDUCT' | 'ATTENDANCE_FRAUD' | 'UNAUTHORIZED_ACCESS' | 'MATCH_DISPUTE' | 'SAFETY' | 'OTHER';
+  description: string;
+  evidenceUrls?: string[];
+  status: ComplaintStatus;
+  internalNotes?: string;
+  assignedAdminId?: string;
+  resolvedAt?: string;
+  resolutionNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IPlatformSettings {
+  supportedSports: Array<{
+    code: string;
+    name: string;
+    active: boolean;
+    defaultScoreLabel: string;
+  }>;
+  registrationControls: {
+    allowAcademyRegistration: boolean;
+    allowCoachRegistration: boolean;
+    allowPlayerRegistration: boolean;
+    requireApproval: boolean;
+  };
+  platformControls: {
+    maintenanceMode: boolean;
+    maintenanceMessage: string;
+    announcementBanner: {
+      active: boolean;
+      message: string;
+      level: 'INFO' | 'WARNING' | 'ALERT';
+    };
+  };
+}
+
+export interface IAnnouncement {
+  _id: string;
+  title: string;
+  content: string;
+  category: 'GENERAL' | 'MAINTENANCE' | 'FEATURE' | 'ALERT';
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  targetAudience: 'ALL' | 'ACADEMY_OWNERS' | 'COACHES' | 'PLAYERS' | 'SCOUTS';
+  targetAcademyIds?: string[];
+  createdBy: string;
+  active: boolean;
+  expiresAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }

@@ -14,3 +14,6 @@ export * from "./IdCounter";
 export * from "./AcademyCodeCounter";
 export * from "./OtpChallenge";
 export * from "./SystemProvisioning";
+export * from "./Complaint";
+export * from "./PlatformSetting";
+export * from "./Announcement";

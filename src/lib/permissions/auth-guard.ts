@@ -105,6 +105,48 @@ export async function requireRole(
 }
 
 /**
+ * Strictly enforces SUPER_ADMIN role (e.g. For destructive operations, cascade delete, platform configuration).
+ */
+export async function requireSuperAdmin(req?: Request): Promise<AuthSessionPayload> {
+  const session = await requireAuth(req);
+  if (session.role !== "SUPER_ADMIN") {
+    throw new ForbiddenError(
+      `Access denied. Primary Super Admin privileges are required for this operation.`
+    );
+  }
+  return session;
+}
+
+/**
+ * Enforces Platform Admin access (SUPER_ADMIN or PLATFORM_ADMIN with optional permission check).
+ */
+export async function requirePlatformAdmin(
+  req?: Request,
+  requiredPermission?: string
+): Promise<AuthSessionPayload> {
+  const session = await requireAuth(req);
+
+  if (session.role !== "SUPER_ADMIN" && session.role !== "PLATFORM_ADMIN") {
+    throw new ForbiddenError(
+      "Access denied. Platform administrative privileges are required for this action."
+    );
+  }
+
+  if (requiredPermission && session.role === "PLATFORM_ADMIN") {
+    const { User } = await import("@/models");
+    const userDoc = await User.findById(session.userId).select("adminPermissions").lean();
+    const permissions: string[] = (userDoc as any)?.adminPermissions || [];
+    if (!permissions.includes(requiredPermission) && !permissions.includes("ALL")) {
+      throw new ForbiddenError(
+        `Access denied. Platform admin is missing required permission: '${requiredPermission}'.`
+      );
+    }
+  }
+
+  return session;
+}
+
+/**
  * Enforces tenant boundary. Platform super admin can access all academies.
  * Academy owners, coaches, scouts, and players can only access their own academy.
  */

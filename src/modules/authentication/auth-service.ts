@@ -78,62 +78,73 @@ export async function loginUser(input: LoginInput): Promise<{
     }
   }
 
-  if (!user || !user.passwordHash) {
-    throw new UnauthorizedError("Invalid credentials. Please verify your Academy Code, ID and password.");
+  if (!user) {
+    throw new UnauthorizedError("Invalid credentials. Please verify your email / ATHLIX ID and password.");
   }
 
   if (user.status === "PENDING") {
     throw new UnauthorizedError(
-      "Your account is pending activation. Please complete registration using your assigned Coach ID or Player ID."
+      "Your account is pending activation. Please complete initial setup and set your password using your assigned Coach ID or Player ID."
     );
+  }
+
+  if (!user.passwordHash) {
+    throw new UnauthorizedError("Invalid credentials. Please verify your email / ATHLIX ID and password.");
   }
 
   if (user.status === "DEACTIVATED") {
     throw new UnauthorizedError("Your account has been deactivated. Please contact support.");
   }
 
+  if (user.status === "BLOCKED") {
+    const reason = user.blockedReason ? `: ${user.blockedReason}` : ".";
+    throw new UnauthorizedError(`Your account has been blocked by Platform Administration${reason}`);
+  }
+
+  // Tenant blocking verification for non-platform admins
+  if (user.role !== "PLATFORM_ADMIN" && user.role !== "SUPER_ADMIN" && user.academyId) {
+    const academy = await Academy.findById(user.academyId);
+    if (academy && academy.status === "BLOCKED") {
+      const reason = academy.blockedReason ? `: ${academy.blockedReason}` : ".";
+      throw new UnauthorizedError(`Your sports academy tenant has been blocked by Platform Administration${reason}`);
+    }
+  }
+
   const isPasswordValid = await verifyPassword(input.password, user.passwordHash);
   if (!isPasswordValid) {
-    throw new UnauthorizedError("Invalid credentials. Please verify your credentials and password.");
+    throw new UnauthorizedError("Invalid credentials. Please verify your email / ATHLIX ID and password.");
   }
 
   let coachId: string | undefined = user.coachId?.toString();
-  let playerId: string | undefined = user.playerId?.toString();
-
-  // If coach or scout, ensure coach link is resolved
   if (user.role === "COACH" && !coachId) {
-    const coachRecord = await Coach.findOne({ userId: user._id });
-    if (coachRecord) {
-      coachId = coachRecord._id.toString();
-    }
-  } else if (user.role === "SCOUT") {
-    const scoutRecord = await Scout.findOne({ userId: user._id });
-    if (scoutRecord) {
-      coachId = scoutRecord.assignedCoachId.toString();
+    const coachDoc = await Coach.findOne({ userId: user._id });
+    if (coachDoc) {
+      coachId = coachDoc._id.toString();
     }
   }
 
-  // Update last login
-  user.metadata = {
-    ...user.metadata,
-    lastLoginAt: new Date(),
-  };
-  await user.save();
+  let playerId: string | undefined = user.playerId?.toString();
+  if (user.role === "PLAYER" && !playerId) {
+    const playerDoc = await Player.findOne({ userId: user._id });
+    if (playerDoc) {
+      playerId = playerDoc._id.toString();
+    }
+  }
+
+  // Update last login timestamp without blocking response
+  User.findByIdAndUpdate(user._id, { "metadata.lastLoginAt": new Date() }).exec().catch(() => {});
 
   const payload: AuthSessionPayload = {
     userId: user._id.toString(),
-    email: user.email,
-    name: user.name,
     role: user.role,
-    academyId: user.academyId?.toString(),
+    academyId: user.academyId ? user.academyId.toString() : undefined,
     coachId,
     playerId,
+    name: user.name,
+    email: user.email,
   };
 
   const token = await signSessionToken(payload);
 
-  return {
-    token,
-    payload,
-  };
+  return { token, payload };
 }

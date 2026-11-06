@@ -18,9 +18,33 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: false, user: null }, { status: 404 });
     }
 
+    // Active session revocation for blocked users
+    if (user.status === "BLOCKED") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Your account has been blocked by Platform Administration${user.blockedReason ? `: ${user.blockedReason}` : "."}`,
+          user: null,
+        },
+        { status: 403 }
+      );
+    }
+
     let academy = null;
     if (session.academyId) {
-      academy = await Academy.findById(session.academyId).select("name slug logo status").lean();
+      academy = await Academy.findById(session.academyId).select("name slug logo status blockedReason").lean();
+
+      // Tenant-level blocking revocation for non-platform admins
+      if (user.role !== "PLATFORM_ADMIN" && user.role !== "SUPER_ADMIN" && academy && academy.status === "BLOCKED") {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Your sports academy tenant has been blocked by Platform Administration${academy.blockedReason ? `: ${academy.blockedReason}` : "."}`,
+            user: null,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     return NextResponse.json({
