@@ -116,25 +116,37 @@ export async function loginUser(input: LoginInput): Promise<{
   }
 
   let coachId: string | undefined = user.coachId?.toString();
-  if (user.role === "COACH" && !coachId) {
+  let playerId: string | undefined = user.playerId?.toString();
+  let sport: string | undefined;
+
+  if (user.role === "COACH") {
     const coachDoc = await Coach.findOne({ userId: user._id });
     if (coachDoc) {
-      coachId = coachDoc._id.toString();
+      sport = coachDoc.sport;
+      if (!coachId) {
+        coachId = coachDoc._id.toString();
+      }
     }
-  }
-
-  let playerId: string | undefined = user.playerId?.toString();
-  if (user.role === "PLAYER" && !playerId) {
+  } else if (user.role === "SCOUT") {
+    const scoutDoc = await Scout.findOne({ userId: user._id });
+    if (scoutDoc) {
+      if (scoutDoc.sport) {
+        sport = scoutDoc.sport;
+      } else if (scoutDoc.assignedCoachId) {
+        const coachDoc = await Coach.findById(scoutDoc.assignedCoachId);
+        if (coachDoc) sport = coachDoc.sport;
+      }
+      if (!coachId && scoutDoc.assignedCoachId) {
+        coachId = scoutDoc.assignedCoachId.toString();
+      }
+    }
+  } else if (user.role === "PLAYER") {
     const playerDoc = await Player.findOne({ userId: user._id });
     if (playerDoc) {
-      playerId = playerDoc._id.toString();
-    }
-  }
-
-  if (user.role === "SCOUT" && !coachId) {
-    const scoutDoc = await Scout.findOne({ userId: user._id });
-    if (scoutDoc && scoutDoc.assignedCoachId) {
-      coachId = scoutDoc.assignedCoachId.toString();
+      sport = playerDoc.sport;
+      if (!playerId) {
+        playerId = playerDoc._id.toString();
+      }
     }
   }
 
@@ -147,6 +159,7 @@ export async function loginUser(input: LoginInput): Promise<{
     academyId: user.academyId ? user.academyId.toString() : undefined,
     coachId,
     playerId,
+    sport,
     name: user.name,
     email: user.email,
   };

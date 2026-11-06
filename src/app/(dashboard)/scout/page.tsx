@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Search, Award, ShieldCheck, Filter, UserCheck } from "lucide-react";
+import { Search, Award, ShieldCheck, UserCheck, Shield } from "lucide-react";
 import { IEligibilityCalculation } from "@/types";
 import { toast } from "sonner";
 
@@ -17,14 +17,12 @@ export default function ScoutDashboardPage() {
   );
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [sportFilter, setSportFilter] = useState("ALL");
 
   const fetchScoutDirectory = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (search) params.set("search", search);
-      if (sportFilter && sportFilter !== "ALL") params.set("sport", sportFilter);
 
       const res = await fetch(`/api/scout/talent-directory?${params.toString()}`);
       if (res.ok) {
@@ -32,7 +30,7 @@ export default function ScoutDashboardPage() {
         setEligiblePlayers(data.eligiblePlayers || []);
       }
 
-      // Also get scout stats for assigned coach info
+      // Also get scout stats for assigned coach info and assigned sport
       const statsRes = await fetch("/api/dashboard/stats");
       if (statsRes.ok) {
         const sData = await statsRes.json();
@@ -48,7 +46,7 @@ export default function ScoutDashboardPage() {
 
   useEffect(() => {
     fetchScoutDirectory();
-  }, [sportFilter]);
+  }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,11 +59,19 @@ export default function ScoutDashboardPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
-              Talent Scout Radar
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+                Talent Scout Radar
+              </h1>
+              {assignedCoach?.sport && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
+                  <Shield className="h-3.5 w-3.5" />
+                  {assignedCoach.sport} Discipline
+                </span>
+              )}
+            </div>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
-              Exclusive Verified Trial-Ready Athletes
+              Exclusive Verified Trial-Ready Athletes • Sport-Level Data Isolation Enforced
             </p>
           </div>
 
@@ -89,11 +95,11 @@ export default function ScoutDashboardPage() {
           <ShieldCheck className="h-5 w-5 text-[#101820] shrink-0 mt-0.5" />
           <div className="text-xs space-y-1">
             <span className="font-bold text-[#101820] uppercase tracking-wider block">
-              Automated Scout Gate:
+              Automated Scout Gate & Sport Isolation:
             </span>
             <p className="text-[#8B969E] leading-relaxed">
-              This directory displays <strong>strictly READY players</strong> belonging to your assigned coach.
-              Non-ready or developing players are logically restricted from this portal until they reach the mandatory
+              This directory displays <strong>strictly READY players</strong> belonging to your assigned coach and discipline (<strong>{assignedCoach?.sport || "Assigned Sport"}</strong>).
+              Players of other sports or developing athletes are logically isolated and restricted until they meet both the mandatory
               &ge; 75% attendance threshold and &ge; 2 match appearances.
             </p>
           </div>
@@ -103,7 +109,7 @@ export default function ScoutDashboardPage() {
         <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-[#DCE1E3] shadow-sm">
           <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2 w-full">
             <Input
-              placeholder="Search eligible athletes by name or position..."
+              placeholder={`Search ${assignedCoach?.sport || ""} prospects by name or position...`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="bg-white"
@@ -119,18 +125,13 @@ export default function ScoutDashboardPage() {
             </Button>
           </form>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Filter className="h-4 w-4 text-[#101820] shrink-0" />
-            <select
-              value={sportFilter}
-              onChange={(e) => setSportFilter(e.target.value)}
-              className="h-11 rounded-md border border-[#DCE1E3] bg-white px-3 text-xs font-bold uppercase text-[#101820] focus-visible:outline-none focus-visible:border-[#101820] w-full sm:w-44"
-            >
-              <option value="ALL">All Disciplines</option>
-              <option value="Football">Football</option>
-              <option value="Basketball">Basketball</option>
-              <option value="Cricket">Cricket</option>
-            </select>
+          {/* Locked Sport Discipline Badge */}
+          <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-xs font-bold text-[#101820] w-full sm:w-auto shrink-0">
+            <Shield className="h-4 w-4 text-[#101820]" />
+            <span>{assignedCoach?.sport || "Assigned"} Radar</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#C6F432] text-[#101820] px-2 py-0.5 rounded border border-[#101820]">
+              Sport-Locked
+            </span>
           </div>
         </div>
 
@@ -207,7 +208,7 @@ export default function ScoutDashboardPage() {
               <Award className="h-12 w-12 mx-auto text-[#101820]/40 mb-3" />
               <h4 className="text-sm font-bold text-[#101820] uppercase">No Trial-Ready Athletes Yet</h4>
               <p className="mt-1 max-w-sm mx-auto text-[#8B969E]">
-                No players under Coach {assignedCoach?.name || "your assigned coach"} currently meet both the 75% attendance and 2 match criteria. Check back after upcoming fixtures.
+                No players under Coach {assignedCoach?.name || "your assigned coach"} currently meet both the 75% attendance and 2 match criteria in {assignedCoach?.sport || "your assigned sport"}. Check back after upcoming fixtures.
               </p>
             </Card>
           )}

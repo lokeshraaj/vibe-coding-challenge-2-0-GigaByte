@@ -7,9 +7,10 @@ import { MetricCard } from "@/components/shared/metric-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Users, CalendarCheck, Trophy, Award, ArrowRight } from "lucide-react";
+import { Users, CalendarCheck, Trophy, Award, ArrowRight, Shield } from "lucide-react";
 
 interface CoachStats {
+  assignedSport?: string;
   assignedPlayersCount: number;
   readyCount: number;
   notReadyCount: number;
@@ -56,11 +57,19 @@ export default function CoachDashboardPage() {
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
-              Coach Desk & Squad Command
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+                Coach Desk & Squad Command
+              </h1>
+              {stats?.assignedSport && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] shadow-2xs uppercase tracking-wider">
+                  <Shield className="h-3.5 w-3.5" />
+                  {stats.assignedSport} Discipline
+                </span>
+              )}
+            </div>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
-              Daily Practice Attendance & Match Operations
+              Daily Practice Attendance & Match Operations • Sport-Level Data Isolation Enforced
             </p>
           </div>
 
@@ -89,13 +98,13 @@ export default function CoachDashboardPage() {
           <MetricCard
             title="Assigned Roster"
             value={loading ? "..." : stats?.assignedPlayersCount || 0}
-            subtitle="Active athletes under your training"
+            subtitle={stats?.assignedSport ? `${stats.assignedSport} athletes in your squad` : "Active athletes under your training"}
             icon={<Users className="h-5 w-5" />}
           />
           <MetricCard
             title="Trial Ready Athletes"
             value={loading ? "..." : stats?.readyCount || 0}
-            subtitle="&ge; 75% attendance + &ge; 2 matches"
+            subtitle="≥ 75% attendance + ≥ 2 matches"
             icon={<Award className="h-5 w-5" />}
             highlight={true}
           />
@@ -108,7 +117,7 @@ export default function CoachDashboardPage() {
           <MetricCard
             title="Matches Recorded"
             value={loading ? "..." : stats?.recentMatches?.length || 0}
-            subtitle="Verified competitive records"
+            subtitle={stats?.assignedSport ? `Verified ${stats.assignedSport} matches` : "Verified competitive records"}
             icon={<Trophy className="h-5 w-5" />}
           />
         </div>

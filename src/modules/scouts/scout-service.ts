@@ -70,6 +70,7 @@ export async function createScout(input: CreateScoutInput) {
     userId: userId,
     assignedCoachId: coach._id,
     scoutCode: scoutCode,
+    sport: coach.sport,
     organization: input.organization || "",
     experienceYears: input.experienceYears || 0,
     accountStatus: "PENDING",
@@ -99,6 +100,7 @@ export async function createScout(input: CreateScoutInput) {
     id: scout._id.toString(),
     userId: user._id.toString(),
     scoutCode: scout.scoutCode,
+    sport: scout.sport || coach.sport,
     name: user.name,
     email: user.email,
     assignedCoachId: coach._id.toString(),
@@ -123,7 +125,7 @@ export async function resendScoutNotification(academyId: string, scoutId: string
   }
 
   let coachUserName = "";
-  let sport = "Multi-Sport";
+  let sport = scout.sport || "Multi-Sport";
   if (scout.assignedCoachId) {
     const coach = await Coach.findById(scout.assignedCoachId).populate("userId", "name");
     if (coach) {
@@ -180,6 +182,7 @@ export async function reassignScout(
 
   // Update scout record
   scout.assignedCoachId = newCoach._id as mongoose.Types.ObjectId;
+  scout.sport = newCoach.sport;
   await scout.save();
 
   // Update new coach's assigned scout
@@ -192,6 +195,7 @@ export async function reassignScout(
   return {
     success: true,
     scoutId: scout._id.toString(),
+    sport: scout.sport,
     assignedCoachId: newCoach._id.toString(),
   };
 }
@@ -220,6 +224,7 @@ export async function listScoutsByAcademy(academyId: string) {
         id: s._id.toString(),
         userId: s.userId?.toString(),
         scoutCode: s.scoutCode || "",
+        sport: s.sport || coachSport,
         name: u?.name || "Unknown",
         email: u?.email || "",
         organization: s.organization,

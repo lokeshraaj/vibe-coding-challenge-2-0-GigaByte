@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { requireRole } from "@/lib/permissions/auth-guard";
+import { requireRole, resolveUserSport } from "@/lib/permissions/auth-guard";
 import { closePracticeSession } from "@/modules/sessions/session-service";
 import { handleApiError, ForbiddenError } from "@/lib/errors";
 
@@ -20,11 +20,14 @@ export async function POST(
       throw new ForbiddenError("Coach and academy identity required.");
     }
 
+    const coachSport = await resolveUserSport(session);
+
     const closedSession = await closePracticeSession(
       academyId,
       coachId,
       sessionId,
-      session.userId
+      session.userId,
+      coachSport || undefined
     );
 
     return NextResponse.json({

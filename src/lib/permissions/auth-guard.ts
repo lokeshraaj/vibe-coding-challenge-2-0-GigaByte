@@ -27,6 +27,7 @@ export async function getAuthSession(req?: Request): Promise<AuthSessionPayload 
           academyId: u.academyId,
           coachId: u.coachId,
           playerId: u.playerId,
+          sport: u.sport,
         };
       }
     }
@@ -233,4 +234,120 @@ export async function requireScoutAccess(
   }
 
   throw new ForbiddenError("Unauthorized: Scout access required.");
+}
+
+/**
+ * Resolves the authenticated user's assigned sport strictly from trusted database records.
+ * - For COACH: returns coach.sport
+ * - For SCOUT: returns scout.sport (or assignedCoach.sport)
+ * - For PLAYER: returns player.sport
+ * - For ACADEMY_OWNER / SUPER_ADMIN / PLATFORM_ADMIN: returns null (unrestricted multi-sport)
+ */
+export async function resolveUserSport(session: AuthSessionPayload): Promise<string | null> {
+  if (
+    session.role === "PLATFORM_ADMIN" ||
+    session.role === "SUPER_ADMIN" ||
+    session.role === "ACADEMY_OWNER"
+  ) {
+    return null;
+  }
+
+  // If verified sport is already embedded in cryptographically signed JWT session token
+  if (session.sport) {
+    return session.sport;
+  }
+
+  const mongoose = (await import("mongoose")).default;
+  const { Coach, Scout, Player } = await import("@/models");
+
+  if (session.role === "COACH") {
+    let coachDoc = null;
+    const isValidAcademyId = session.academyId && mongoose.Types.ObjectId.isValid(session.academyId);
+    if (session.coachId && mongoose.Types.ObjectId.isValid(session.coachId)) {
+      const q: any = { _id: session.coachId };
+      if (isValidAcademyId) q.academyId = session.academyId;
+      coachDoc = await Coach.findOne(q).select("sport");
+    }
+    if (!coachDoc && session.userId && mongoose.Types.ObjectId.isValid(session.userId)) {
+      const q: any = { userId: session.userId };
+      if (isValidAcademyId) q.academyId = session.academyId;
+      coachDoc = await Coach.findOne(q).select("sport");
+    }
+    if (!coachDoc || !coachDoc.sport) {
+      throw new ForbiddenError("No assigned sport found for this coach profile.");
+    }
+    return coachDoc.sport;
+  }
+
+  if (session.role === "SCOUT") {
+    let scoutDoc = null;
+    const isValidAcademyId = session.academyId && mongoose.Types.ObjectId.isValid(session.academyId);
+    if (session.userId && mongoose.Types.ObjectId.isValid(session.userId)) {
+      const q: any = { userId: session.userId };
+      if (isValidAcademyId) q.academyId = session.academyId;
+      scoutDoc = await Scout.findOne(q)
+        .populate("assignedCoachId", "sport")
+        .select("sport assignedCoachId");
+    }
+
+    if (!scoutDoc) {
+      throw new ForbiddenError("No scout profile associated with this account.");
+    }
+
+    const assignedCoach = scoutDoc.assignedCoachId as any;
+    const scoutSport = scoutDoc.sport || assignedCoach?.sport;
+
+    if (!scoutSport) {
+      throw new ForbiddenError("No assigned sport found for this scout profile.");
+    }
+    return scoutSport;
+  }
+
+  if (session.role === "PLAYER") {
+    let playerDoc = null;
+    const isValidAcademyId = session.academyId && mongoose.Types.ObjectId.isValid(session.academyId);
+    if (session.playerId && mongoose.Types.ObjectId.isValid(session.playerId)) {
+      const q: any = { _id: session.playerId };
+      if (isValidAcademyId) q.academyId = session.academyId;
+      playerDoc = await Player.findOne(q).select("sport");
+    }
+    if (!playerDoc && session.userId && mongoose.Types.ObjectId.isValid(session.userId)) {
+      const q: any = { userId: session.userId };
+      if (isValidAcademyId) q.academyId = session.academyId;
+      playerDoc = await Player.findOne(q).select("sport");
+    }
+    if (!playerDoc || !playerDoc.sport) {
+      throw new ForbiddenError("No assigned sport found for this player profile.");
+    }
+    return playerDoc.sport;
+  }
+
+  return null;
+}
+
+/**
+ * Validates that the requested resource sport strictly matches the user's assigned sport.
+ * If user is unrestricted (Academy Owner, Platform Admin), returns resourceSport or null.
+ * If user is restricted (Coach, Scout, Player) and resourceSport does not match, throws ForbiddenError.
+ */
+export async function requireSportAccess(
+  session: AuthSessionPayload,
+  resourceSport?: string
+): Promise<string | null> {
+  const assignedSport = await resolveUserSport(session);
+
+  // Unrestricted multi-sport roles
+  if (assignedSport === null) {
+    return resourceSport || null;
+  }
+
+  if (resourceSport) {
+    if (resourceSport.trim().toLowerCase() !== assignedSport.trim().toLowerCase()) {
+      throw new ForbiddenError(
+        `Access denied: You are restricted to your assigned sport (${assignedSport}) and cannot access ${resourceSport} data.`
+      );
+    }
+  }
+
+  return assignedSport;
 }

@@ -48,16 +48,25 @@ export async function createPlayer(input: CreatePlayerInput, actorId?: string) {
     throw new NotFoundError("Assigned coach does not exist in this academy.");
   }
 
+  // Strictly enforce sport-level access control: coach can only enroll players for assigned sport
+  if (coach.sport && input.sport.trim().toLowerCase() !== coach.sport.trim().toLowerCase()) {
+    throw new ForbiddenError(
+      `Coach is assigned to ${coach.sport}. Cannot enroll players in ${input.sport}.`
+    );
+  }
+
+  const effectiveSport = coach.sport ? coach.sport.trim() : input.sport.trim();
+
   const academy = await Academy.findById(new mongoose.Types.ObjectId(input.academyId));
   if (!academy) {
     throw new NotFoundError("Academy not found");
   }
 
-  // Generate atomic, collision-free Player ID (e.g. PLFO001)
+  // Generate atomic, collision-free Player ID (e.g. PLCR0001 or PLCR001)
   const playerCode = await generateAthlixId({
     academyId: input.academyId,
     userType: "PLAYER",
-    sport: input.sport,
+    sport: effectiveSport,
   });
 
   const playerId = new mongoose.Types.ObjectId();
@@ -96,7 +105,7 @@ export async function createPlayer(input: CreatePlayerInput, actorId?: string) {
     name: input.name.trim(),
     dateOfBirth: new Date(input.dateOfBirth),
     gender: input.gender || "MALE",
-    sport: input.sport.trim(),
+    sport: effectiveSport,
     position: input.position.trim(),
     photoUrl: input.photoUrl || "",
     enrollmentDate: new Date(input.enrollmentDate),
@@ -114,7 +123,7 @@ export async function createPlayer(input: CreatePlayerInput, actorId?: string) {
         action: "PLAYER_ENROLLED",
         resourceType: "PLAYER",
         resourceId: playerCode,
-        details: { name: player.name, playerCode, coachId: input.coachId },
+        details: { name: player.name, playerCode, coachId: input.coachId, sport: effectiveSport },
       });
     }
   } catch (err) {
@@ -187,8 +196,8 @@ export async function listPlayers(filter: PlayerFilterQuery) {
     query.coachId = new mongoose.Types.ObjectId(filter.coachId);
   }
 
-  if (filter.sport) {
-    query.sport = filter.sport;
+  if (filter.sport && filter.sport !== "ALL") {
+    query.sport = new RegExp(`^${filter.sport.trim()}$`, "i");
   }
 
   if (filter.status) {
@@ -268,7 +277,8 @@ export async function updatePlayer(
   academyId: string,
   playerId: string,
   updates: Partial<CreatePlayerInput>,
-  coachId?: string
+  coachId?: string,
+  coachSport?: string | null
 ) {
   const query: Record<string, unknown> = {
     _id: new mongoose.Types.ObjectId(playerId),
@@ -279,10 +289,26 @@ export async function updatePlayer(
     query.coachId = new mongoose.Types.ObjectId(coachId);
   }
 
+  if (coachSport) {
+    query.sport = new RegExp(`^${coachSport.trim()}$`, "i");
+  }
+
   const player = await Player.findOne(query);
 
   if (!player) {
+    const existing = await Player.findOne({
+      _id: new mongoose.Types.ObjectId(playerId),
+      academyId: new mongoose.Types.ObjectId(academyId),
+    });
+    if (existing) {
+      throw new ForbiddenError("Access denied: Athlete belongs to another coach or sport.");
+    }
     throw new NotFoundError("Athlete not found in this academy");
+  }
+
+  // Sport discipline cannot be modified
+  if (updates.sport && updates.sport.trim().toLowerCase() !== player.sport.trim().toLowerCase()) {
+    throw new ForbiddenError("Athlete sport discipline is permanent and cannot be modified.");
   }
 
   if (updates.name) player.name = updates.name.trim();

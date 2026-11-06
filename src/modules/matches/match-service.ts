@@ -24,16 +24,31 @@ export interface CreateMatchInput {
   }>;
 }
 
-export async function createMatch(input: CreateMatchInput) {
+export async function createMatch(input: CreateMatchInput, coachSport?: string | null) {
+  // Enforce sport-level access control if coach has an assigned sport
+  if (coachSport && input.sport.trim().toLowerCase() !== coachSport.trim().toLowerCase()) {
+    throw new ForbiddenError(
+      `Access denied: You are assigned to ${coachSport} and cannot create matches for ${input.sport}.`
+    );
+  }
+
+  const effectiveSport = coachSport ? coachSport.trim() : input.sport.trim();
+
   // 1. Verify linked session exists, is CLOSED, belongs to coach & sport
-  const session = await PracticeSession.findOne({
+  const sessionQuery: Record<string, unknown> = {
     _id: new mongoose.Types.ObjectId(input.sessionId),
     academyId: new mongoose.Types.ObjectId(input.academyId),
     coachId: new mongoose.Types.ObjectId(input.coachId),
-  });
+  };
+
+  if (coachSport) {
+    sessionQuery.sport = new RegExp(`^${coachSport.trim()}$`, "i");
+  }
+
+  const session = await PracticeSession.findOne(sessionQuery);
 
   if (!session) {
-    throw new NotFoundError("Linked practice session not found or does not belong to this coach.");
+    throw new NotFoundError("Linked practice session not found or does not belong to this coach/sport.");
   }
 
   if (session.status !== "CLOSED") {
@@ -43,9 +58,9 @@ export async function createMatch(input: CreateMatchInput) {
   }
 
   // Check sport match
-  if (session.sport.trim().toLowerCase() !== input.sport.trim().toLowerCase()) {
+  if (session.sport.trim().toLowerCase() !== effectiveSport.toLowerCase()) {
     throw new ValidationError(
-      `Linked session sport (${session.sport}) does not match match sport (${input.sport}).`
+      `Linked session sport (${session.sport}) does not match match sport (${effectiveSport}).`
     );
   }
 
@@ -88,7 +103,7 @@ export async function createMatch(input: CreateMatchInput) {
   normalizedDate.setUTCHours(0, 0, 0, 0);
 
   const matchId = new mongoose.Types.ObjectId();
-  const label = input.scoreLabel || getSportScoreLabel(input.sport);
+  const label = input.scoreLabel || getSportScoreLabel(effectiveSport);
 
   // Compute result if not explicitly passed
   let computedResult = input.result;
@@ -104,7 +119,7 @@ export async function createMatch(input: CreateMatchInput) {
     coachId: new mongoose.Types.ObjectId(input.coachId),
     sessionId: session._id,
     date: normalizedDate,
-    sport: input.sport.trim(),
+    sport: effectiveSport,
     opponentName: input.opponentName.trim(),
     venue: input.venue || "",
     scoreLabel: label,
@@ -139,11 +154,21 @@ export async function createMatch(input: CreateMatchInput) {
   };
 }
 
-export async function listMatchesByCoach(academyId: string, coachId: string) {
-  const matches = await Match.find({
+export async function listMatchesByCoach(
+  academyId: string,
+  coachId: string,
+  sport?: string | null
+) {
+  const query: Record<string, unknown> = {
     academyId: new mongoose.Types.ObjectId(academyId),
     coachId: new mongoose.Types.ObjectId(coachId),
-  })
+  };
+
+  if (sport) {
+    query.sport = new RegExp(`^${sport.trim()}$`, "i");
+  }
+
+  const matches = await Match.find(query)
     .sort({ date: -1 })
     .lean();
 
@@ -180,13 +205,35 @@ export async function listMatchesByCoach(academyId: string, coachId: string) {
   );
 }
 
-export async function getMatchDetails(academyId: string, matchId: string) {
-  const match = await Match.findOne({
+export async function getMatchDetails(
+  academyId: string,
+  matchId: string,
+  coachId?: string | null,
+  sport?: string | null
+) {
+  const query: Record<string, unknown> = {
     _id: new mongoose.Types.ObjectId(matchId),
     academyId: new mongoose.Types.ObjectId(academyId),
-  }).populate("coachId", "sport");
+  };
+
+  if (coachId) {
+    query.coachId = new mongoose.Types.ObjectId(coachId);
+  }
+
+  if (sport) {
+    query.sport = new RegExp(`^${sport.trim()}$`, "i");
+  }
+
+  const match = await Match.findOne(query).populate("coachId", "sport");
 
   if (!match) {
+    const existing = await Match.findOne({
+      _id: new mongoose.Types.ObjectId(matchId),
+      academyId: new mongoose.Types.ObjectId(academyId),
+    });
+    if (existing) {
+      throw new ForbiddenError("Access denied: You are not authorized to view matches outside your assigned sport or squad.");
+    }
     throw new NotFoundError("Match not found");
   }
 
@@ -234,13 +281,35 @@ export async function getMatchDetails(academyId: string, matchId: string) {
  * Retrieves eligible roster for a match:
  * ONLY players marked PRESENT in the given closed practice session!
  */
-export async function getEligibleMatchRoster(academyId: string, sessionId: string) {
-  const session = await PracticeSession.findOne({
+export async function getEligibleMatchRoster(
+  academyId: string,
+  sessionId: string,
+  coachId?: string | null,
+  sport?: string | null
+) {
+  const query: Record<string, unknown> = {
     _id: new mongoose.Types.ObjectId(sessionId),
     academyId: new mongoose.Types.ObjectId(academyId),
-  });
+  };
+
+  if (coachId) {
+    query.coachId = new mongoose.Types.ObjectId(coachId);
+  }
+
+  if (sport) {
+    query.sport = new RegExp(`^${sport.trim()}$`, "i");
+  }
+
+  const session = await PracticeSession.findOne(query);
 
   if (!session) {
+    const existing = await PracticeSession.findOne({
+      _id: new mongoose.Types.ObjectId(sessionId),
+      academyId: new mongoose.Types.ObjectId(academyId),
+    });
+    if (existing) {
+      throw new ForbiddenError("Access denied: Practice session belongs to another coach or sport.");
+    }
     throw new NotFoundError("Session not found");
   }
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { requireAuth } from "@/lib/permissions/auth-guard";
+import { requireAuth, resolveUserSport } from "@/lib/permissions/auth-guard";
 import { playerSchema } from "@/lib/validation/schemas";
 import { createPlayer, listPlayers } from "@/modules/players/player-service";
 import { getScoutTalentDirectory } from "@/modules/eligibility/eligibility-service";
@@ -19,19 +19,32 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || undefined;
-    const sport = searchParams.get("sport") || undefined;
+    const requestedSport = searchParams.get("sport") || undefined;
     const status = searchParams.get("status") || "ACTIVE";
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
 
     let coachId = searchParams.get("coachId") || undefined;
+    let effectiveSport = requestedSport;
 
-    // Strict coach data isolation: Coach can ONLY list their own players!
+    // Strict coach data isolation: Coach can ONLY list their own players and assigned sport!
     if (session.role === "COACH") {
       coachId = session.coachId;
+      const coachSport = await resolveUserSport(session);
+      if (
+        requestedSport &&
+        coachSport &&
+        requestedSport !== "ALL" &&
+        requestedSport.trim().toLowerCase() !== coachSport.trim().toLowerCase()
+      ) {
+        throw new ForbiddenError(
+          `Access denied: You are assigned to ${coachSport} and cannot view players belonging to ${requestedSport}.`
+        );
+      }
+      effectiveSport = coachSport || requestedSport;
     }
 
-    // Strict scout restriction: Scout can ONLY see READY players under their assigned coach!
+    // Strict scout restriction: Scout can ONLY see READY players under their assigned coach & sport!
     if (session.role === "SCOUT") {
       let targetCoachId = session.coachId;
       if (!targetCoachId) {
@@ -59,9 +72,23 @@ export async function GET(req: Request) {
         });
       }
 
-      // Fetch ONLY trial-ready players under assigned coach
+      const scoutSport = await resolveUserSport(session);
+      if (
+        requestedSport &&
+        scoutSport &&
+        requestedSport !== "ALL" &&
+        requestedSport.trim().toLowerCase() !== scoutSport.trim().toLowerCase()
+      ) {
+        throw new ForbiddenError(
+          `Access denied: You are assigned to ${scoutSport} and cannot search or view players belonging to ${requestedSport}.`
+        );
+      }
+
+      effectiveSport = scoutSport || requestedSport;
+
+      // Fetch ONLY trial-ready players under assigned coach and assigned sport
       const eligiblePlayers = await getScoutTalentDirectory(academyId, targetCoachId, {
-        sport,
+        sport: effectiveSport,
         search,
       });
 
@@ -94,7 +121,7 @@ export async function GET(req: Request) {
     const result = await listPlayers({
       academyId,
       coachId,
-      sport,
+      sport: effectiveSport,
       status,
       search,
       page,
@@ -130,8 +157,19 @@ export async function POST(req: Request) {
       throw new ForbiddenError("No coach profile associated with this account.");
     }
 
+    const coachSport = await resolveUserSport(session);
     const body = await req.json();
-    const validatedData = playerSchema.parse(body);
+
+    if (body.sport && coachSport && body.sport.trim().toLowerCase() !== coachSport.trim().toLowerCase()) {
+      throw new ForbiddenError(
+        `Access denied: You are assigned to ${coachSport} and cannot enroll players in ${body.sport}.`
+      );
+    }
+
+    const validatedData = playerSchema.parse({
+      ...body,
+      sport: coachSport || body.sport,
+    });
 
     const player = await createPlayer(
       {

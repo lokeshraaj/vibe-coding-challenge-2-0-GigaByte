@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Users, Plus, X, Copy, Mail, Check } from "lucide-react";
+import { Users, Plus, X, Copy, Mail, Check, Lock, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 interface PlayerItem {
@@ -34,13 +34,14 @@ export default function CoachPlayersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [assignedSport, setAssignedSport] = useState<string>("");
 
   const [formData, setFormData] = useState({
     name: "",
     dateOfBirth: "2008-05-15",
     gender: "MALE",
-    sport: "Football",
-    position: "Midfielder",
+    sport: "Cricket",
+    position: "All-Rounder",
     enrollmentDate: new Date().toISOString().split("T")[0],
     coachId: "self", // Scoped server-side
     contact: {
@@ -69,6 +70,21 @@ export default function CoachPlayersPage() {
 
   useEffect(() => {
     fetchRoster();
+    async function fetchMe() {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user?.sport) {
+            setAssignedSport(data.user.sport);
+            setFormData((prev) => ({ ...prev, sport: data.user.sport }));
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    fetchMe();
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -78,7 +94,10 @@ export default function CoachPlayersPage() {
       const res = await fetch("/api/players", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          sport: assignedSport || formData.sport,
+        }),
       });
 
       const data = await res.json();
@@ -94,8 +113,8 @@ export default function CoachPlayersPage() {
         name: "",
         dateOfBirth: "2008-05-15",
         gender: "MALE",
-        sport: "Football",
-        position: "Midfielder",
+        sport: assignedSport || "Cricket",
+        position: "All-Rounder",
         enrollmentDate: new Date().toISOString().split("T")[0],
         coachId: "self",
         contact: {
@@ -121,16 +140,18 @@ export default function CoachPlayersPage() {
   };
 
   const handleResendNotice = async (playerId: string) => {
-    setResendingId(playerId);
     try {
+      setResendingId(playerId);
       const res = await fetch(`/api/players/${playerId}/resend-notification`, {
         method: "POST",
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to resend notice");
-      toast.success(data.message || "Notification email re-sent successfully via Brevo");
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to resend notification email");
+      }
+      toast.success(data.message || "Notification email re-sent successfully!");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not resend email");
+      toast.error(err instanceof Error ? err.message : "Error sending notification email");
     } finally {
       setResendingId(null);
     }
@@ -141,11 +162,19 @@ export default function CoachPlayersPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
-              Players management system
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+                Assigned Squad Roster
+              </h1>
+              {assignedSport && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
+                  <Shield className="h-3.5 w-3.5" />
+                  {assignedSport}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
-              Athletes Assigned Under Your Training
+              Athlete Identification, Profiles & Academy Enrolment • {assignedSport || "Assigned"} Squad Only
             </p>
           </div>
 
@@ -156,74 +185,63 @@ export default function CoachPlayersPage() {
             className="gap-2 font-bold shadow-sm"
           >
             <Plus className="h-4 w-4" />
-            <span>Add New Player</span>
+            <span>Enroll Athlete</span>
           </Button>
         </div>
 
-        {/* Roster Table Card */}
+        {/* Players Table Card */}
         <Card className="border-[#DCE1E3] bg-white shadow-sm">
-          <CardHeader className="pb-4 border-b border-[#DCE1E3]">
-            <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
-              <Users className="h-5 w-5 text-[#101820]" />
-              <span>Assigned Athletes ({players.length})</span>
+          <CardHeader className="pb-3 border-b border-[#DCE1E3]">
+            <CardTitle className="text-sm uppercase flex items-center justify-between text-[#101820]">
+              <span>Active Athletes</span>
+              <span className="text-[#101820] font-bold">{players.length}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
-              <div className="py-12 text-center text-xs text-[#8B969E]">
-                Loading roster...
-              </div>
+              <div className="py-12 text-center text-xs text-[#8B969E]">Loading roster...</div>
             ) : players.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-[#DCE1E3] bg-[#F4F3EE] text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
-                      <th className="p-4">Player ID</th>
-                      <th className="p-4">Athlete Details</th>
-                      <th className="p-4">Sport & Position</th>
-                      <th className="p-4">Age / Gender</th>
-                      <th className="p-4">Enrollment Date</th>
-                      <th className="p-4">Account Status</th>
-                      <th className="p-4">Training Status</th>
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#F4F3EE] text-[#8B969E] uppercase tracking-wider text-[10px] font-bold border-b border-[#DCE1E3]">
+                    <tr>
+                      <th className="p-4">Athlix ID</th>
+                      <th className="p-4">Athlete Name</th>
+                      <th className="p-4">Sport</th>
+                      <th className="p-4">Position</th>
+                      <th className="p-4">Age / DOB</th>
+                      <th className="p-4">Enrolled</th>
+                      <th className="p-4">Login Status</th>
+                      <th className="p-4">Status</th>
                       <th className="p-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#DCE1E3]">
+                  <tbody className="divide-y divide-[#DCE1E3] text-[#101820]">
                     {players.map((p) => (
-                      <tr key={p.id} className="hover:bg-[#F4F3EE] transition-colors">
-                        <td className="p-4">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono bg-[#FAF9F5] border border-[#DCE1E3] px-2 py-0.5 rounded text-xs font-bold text-[#101820]">
-                              {p.playerCode}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleCopyId(p.playerCode)}
-                              className="text-[#8B969E] hover:text-[#101820] p-1"
-                              title="Copy Player ID"
-                            >
-                              {copiedId === p.playerCode ? (
-                                <Check className="h-3 w-3 text-emerald-600" />
-                              ) : (
-                                <Copy className="h-3 w-3" />
-                              )}
-                            </button>
-                          </div>
+                      <tr key={p.id} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                        <td className="p-4 font-mono font-bold text-[#101820]">
+                          <button
+                            onClick={() => handleCopyId(p.playerCode)}
+                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#F4F3EE] hover:bg-[#DCE1E3] transition-colors border border-[#DCE1E3] text-xs font-mono"
+                            title="Click to copy Player ID"
+                          >
+                            <span>{p.playerCode}</span>
+                            {copiedId === p.playerCode ? (
+                              <Check className="h-3 w-3 text-emerald-600" />
+                            ) : (
+                              <Copy className="h-3 w-3 text-[#8B969E]" />
+                            )}
+                          </button>
                         </td>
-                        <td className="p-4 font-bold text-[#101820]">
-                          <div className="text-sm">{p.name}</div>
+                        <td className="p-4">
+                          <div className="font-bold text-[#101820]">{p.name}</div>
                           {p.contact?.email && (
-                            <div className="text-[10px] text-[#8B969E] font-normal">{p.contact.email}</div>
-                          )}
-                          {p.contact?.phone && (
-                            <div className="text-[10px] text-[#8B969E] font-normal">{p.contact.phone}</div>
+                            <div className="text-[11px] text-[#8B969E]">{p.contact.email}</div>
                           )}
                         </td>
-                        <td className="p-4">
-                          <div className="font-bold text-[#101820] uppercase">{p.sport}</div>
-                          <div className="text-[10px] text-[#8B969E]">{p.position}</div>
-                        </td>
-                        <td className="p-4 font-semibold text-[#101820]">
+                        <td className="p-4 font-semibold">{p.sport}</td>
+                        <td className="p-4">{p.position}</td>
+                        <td className="p-4 text-[#8B969E]">
                           {p.age} yrs • {p.gender}
                         </td>
                         <td className="p-4 text-[#8B969E]">
@@ -353,27 +371,22 @@ export default function CoachPlayersPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
-                      Sport Discipline *
+                      Sport Discipline
                     </label>
-                    <select
-                      className="flex h-11 w-full rounded-md border border-[#DCE1E3] bg-white px-3 py-2 text-sm text-[#101820] focus-visible:outline-none focus-visible:border-[#101820]"
-                      value={formData.sport}
-                      onChange={(e) => setFormData({ ...formData, sport: e.target.value })}
-                    >
-                      <option value="Football">Football</option>
-                      <option value="Basketball">Basketball</option>
-                      <option value="Cricket">Cricket</option>
-                      <option value="Tennis">Tennis</option>
-                      <option value="Hockey">Hockey</option>
-                      <option value="Athletics">Athletics</option>
-                      <option value="Badminton">Badminton</option>
-                      <option value="Swimming">Swimming</option>
-                    </select>
+                    <div className="flex h-11 w-full items-center justify-between rounded-md border border-[#DCE1E3] bg-[#F4F3EE] px-3 text-sm font-bold text-[#101820]">
+                      <span className="flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-[#101820]" />
+                        {assignedSport || formData.sport}
+                      </span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#C6F432] text-[#101820] px-2 py-0.5 rounded border border-[#101820]">
+                        Assigned
+                      </span>
+                    </div>
                   </div>
 
                   <Input
                     label="Position / Role *"
-                    placeholder="e.g. Striker / Midfielder"
+                    placeholder="e.g. Striker / Batsman"
                     value={formData.position}
                     onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                     required
@@ -388,11 +401,8 @@ export default function CoachPlayersPage() {
                   required
                 />
 
-                <div className="rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] p-3 text-[11px] text-[#202A32] space-y-1">
-                  <strong>Automated Athlete Onboarding:</strong>
-                  <div>
-                    A unique Player ID (e.g. <code>DPLFO001</code>) will be generated. An informational email will be sent via Brevo to the athlete&apos;s email address with instructions to activate their account on ATHLIX.
-                  </div>
+                <div className="p-3 bg-[#F4F3EE] rounded-lg border border-[#DCE1E3] text-[11px] text-[#8B969E]">
+                  Athlix ID will be generated atomically upon enrolment and locked permanently to {assignedSport || formData.sport}. An automated email with identification credentials will be dispatched if an email address is provided.
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
@@ -400,7 +410,7 @@ export default function CoachPlayersPage() {
                     Cancel
                   </Button>
                   <Button type="submit" variant="athletic" size="sm" isLoading={submitting}>
-                    Enroll Athlete & Send Notice
+                    Enroll Athlete
                   </Button>
                 </div>
               </form>

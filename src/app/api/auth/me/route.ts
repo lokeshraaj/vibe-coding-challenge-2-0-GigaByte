@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { getAuthSession } from "@/lib/permissions/auth-guard";
+import { getAuthSession, resolveUserSport } from "@/lib/permissions/auth-guard";
 import { User, Academy } from "@/models";
 import { handleApiError } from "@/lib/errors";
 
@@ -47,6 +47,8 @@ export async function GET(req: Request) {
       }
     }
 
+    const userSport = await resolveUserSport(session);
+
     return NextResponse.json({
       success: true,
       user: {
@@ -57,6 +59,7 @@ export async function GET(req: Request) {
         academyId: user.academyId?.toString(),
         coachId: session.coachId,
         playerId: user.playerId?.toString(),
+        sport: userSport || session.sport,
         status: user.status,
         academy,
       },

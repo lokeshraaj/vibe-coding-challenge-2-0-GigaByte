@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { requireRole } from "@/lib/permissions/auth-guard";
+import { requireRole, resolveUserSport } from "@/lib/permissions/auth-guard";
 import { attendanceBatchSchema } from "@/lib/validation/schemas";
 import { saveAttendance } from "@/modules/sessions/session-service";
 import { handleApiError, ForbiddenError } from "@/lib/errors";
@@ -21,18 +21,23 @@ export async function POST(
       throw new ForbiddenError("Coach and academy identity required.");
     }
 
+    const coachSport = await resolveUserSport(session);
+
     const body = await req.json();
     const validatedData = attendanceBatchSchema.parse({
       sessionId,
       records: body.records,
     });
 
-    const result = await saveAttendance({
-      academyId,
-      coachId,
-      sessionId: validatedData.sessionId,
-      records: validatedData.records,
-    });
+    const result = await saveAttendance(
+      {
+        academyId,
+        coachId,
+        sessionId: validatedData.sessionId,
+        records: validatedData.records,
+      },
+      coachSport || undefined
+    );
 
     return NextResponse.json({ ...result });
   } catch (error) {

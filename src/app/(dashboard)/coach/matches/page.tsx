@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Trophy, Plus, X, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Trophy, Plus, X, AlertCircle, CheckCircle2, Lock, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 interface MatchItem {
@@ -40,6 +40,7 @@ interface EligiblePlayer {
 export default function CoachMatchesPage() {
   const [matches, setMatches] = useState<MatchItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assignedSport, setAssignedSport] = useState<string>("");
 
   // New match modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,9 +51,9 @@ export default function CoachMatchesPage() {
     sessionId: "",
     opponentName: "",
     venue: "Main Stadium",
-    sport: "Football",
+    sport: "Cricket",
     date: new Date().toISOString().split("T")[0],
-    scoreLabel: "Goals",
+    scoreLabel: "Runs",
     academyTeamScore: 0,
     opponentScore: 0,
     result: "WON" as "WON" | "LOST" | "DRAW",
@@ -119,15 +120,15 @@ export default function CoachMatchesPage() {
         const players: EligiblePlayer[] = data.eligiblePlayers || [];
         setEligiblePlayers(players);
 
-        // Pre-select all eligible present players with 0 score
-        const initialMap = new Map();
+        // Pre-select all present players with default 0 score
+        const map = new Map<string, { score: number; minutesPlayed: number }>();
         players.forEach((p) => {
-          initialMap.set(p.playerId, { score: 0, minutesPlayed: 90 });
+          map.set(p.playerId, { score: 0, minutesPlayed: 90 });
         });
-        setSelectedParticipants(initialMap);
+        setSelectedParticipants(map);
       }
     } catch (e) {
-      toast.error("Failed to load eligible session roster");
+      toast.error("Failed to fetch eligible roster for session");
     } finally {
       setLoadingEligible(false);
     }
@@ -135,6 +136,21 @@ export default function CoachMatchesPage() {
 
   useEffect(() => {
     fetchMatches();
+    async function fetchMe() {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user?.sport) {
+            setAssignedSport(data.user.sport);
+            setMatchForm((prev) => ({ ...prev, sport: data.user.sport }));
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    fetchMe();
   }, []);
 
   const handleOpenModal = () => {
@@ -144,19 +160,17 @@ export default function CoachMatchesPage() {
 
   const handleSessionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const sId = e.target.value;
-    const selectedSess = closedSessions.find((s) => s.id === sId);
-    if (selectedSess) {
-      setMatchForm((prev) => ({
-        ...prev,
-        sessionId: sId,
-        sport: selectedSess.sport,
-        date: selectedSess.date.split("T")[0],
-      }));
-      loadEligibleRoster(sId);
-    }
+    const selected = closedSessions.find((s) => s.id === sId);
+    setMatchForm((prev) => ({
+      ...prev,
+      sessionId: sId,
+      sport: selected?.sport || prev.sport,
+      date: selected?.date ? selected.date.split("T")[0] : prev.date,
+    }));
+    loadEligibleRoster(sId);
   };
 
-  const handleTogglePlayer = (playerId: string) => {
+  const handleToggleParticipant = (playerId: string) => {
     const next = new Map(selectedParticipants);
     if (next.has(playerId)) {
       next.delete(playerId);
@@ -166,31 +180,31 @@ export default function CoachMatchesPage() {
     setSelectedParticipants(next);
   };
 
-  const handlePlayerScoreChange = (playerId: string, score: number) => {
+  const handleUpdateScore = (playerId: string, score: number) => {
     const next = new Map(selectedParticipants);
     const existing = next.get(playerId) || { score: 0, minutesPlayed: 90 };
-    next.set(playerId, { ...existing, score: Math.max(0, score) });
+    next.set(playerId, { ...existing, score });
     setSelectedParticipants(next);
   };
 
   const handleCreateMatch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!matchForm.sessionId) {
-      toast.error("Please select a linked closed practice session");
+      toast.error("You must link this match to a closed practice session");
       return;
     }
 
     if (selectedParticipants.size === 0) {
-      toast.error("At least one participating athlete must be selected for the match");
+      toast.error("You must include at least one fielded player from the session");
       return;
     }
 
     setSubmitting(true);
     try {
-      const participants = Array.from(selectedParticipants.entries()).map(([playerId, val]) => ({
+      const participants = Array.from(selectedParticipants.entries()).map(([playerId, data]) => ({
         playerId,
-        score: val.score,
-        minutesPlayed: val.minutesPlayed,
+        score: data.score,
+        minutesPlayed: data.minutesPlayed,
       }));
 
       const res = await fetch("/api/matches", {
@@ -198,21 +212,19 @@ export default function CoachMatchesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...matchForm,
-          coachId: "self",
+          sport: assignedSport || matchForm.sport,
           participants,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to record match");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to record match");
 
       toast.success("Match performance recorded successfully!");
       setIsModalOpen(false);
       fetchMatches();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error recording match");
+      toast.error(err instanceof Error ? err.message : "Error creating match");
     } finally {
       setSubmitting(false);
     }
@@ -223,26 +235,39 @@ export default function CoachMatchesPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
-              Match Performance & Scores
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+                Competitive Match Logs
+              </h1>
+              {assignedSport && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
+                  <Shield className="h-3.5 w-3.5" />
+                  {assignedSport}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
-              Record Fixtures With Session-Locked Verification
+              Verify Scorecards & Player Statistics • {assignedSport || "Assigned"} Matches Only
             </p>
           </div>
 
-          <Button variant="athletic" size="sm" onClick={handleOpenModal} className="gap-2 font-bold shadow-sm">
+          <Button
+            variant="athletic"
+            size="sm"
+            onClick={handleOpenModal}
+            className="gap-2 font-bold shadow-sm"
+          >
             <Plus className="h-4 w-4" />
-            <span>Record New Match</span>
+            <span>Record Match Performance</span>
           </Button>
         </div>
 
-        {/* Matches List */}
+        {/* Matches List Card */}
         <Card className="border-[#DCE1E3] bg-white shadow-sm">
-          <CardHeader className="pb-4 border-b border-[#DCE1E3]">
-            <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
-              <Trophy className="h-5 w-5 text-[#101820]" />
-              <span>Match Records ({matches.length})</span>
+          <CardHeader className="pb-3 border-b border-[#DCE1E3]">
+            <CardTitle className="text-sm uppercase flex items-center justify-between text-[#101820]">
+              <span>Recorded Fixtures</span>
+              <span className="text-[#101820] font-bold">{matches.length}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -250,51 +275,48 @@ export default function CoachMatchesPage() {
               <div className="py-12 text-center text-xs text-[#8B969E]">Loading matches...</div>
             ) : matches.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-[#DCE1E3] bg-[#F4F3EE] text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
-                      <th className="p-4">Match Date</th>
-                      <th className="p-4">Opponent & Sport</th>
-                      <th className="p-4">Score Sheet</th>
-                      <th className="p-4">Top Scorers</th>
-                      <th className="p-4">Participants</th>
-                      <th className="p-4">Result</th>
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#F4F3EE] text-[#8B969E] uppercase tracking-wider text-[10px] font-bold border-b border-[#DCE1E3]">
+                    <tr>
+                      <th className="p-4">Date</th>
+                      <th className="p-4">Sport</th>
+                      <th className="p-4">Opponent</th>
+                      <th className="p-4">Score</th>
+                      <th className="p-4">Squad Fielded</th>
+                      <th className="p-4">Top Performers</th>
+                      <th className="p-4">Outcome</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#DCE1E3]">
+                  <tbody className="divide-y divide-[#DCE1E3] text-[#101820]">
                     {matches.map((m) => (
-                      <tr key={m.id} className="hover:bg-[#F4F3EE] transition-colors">
-                        <td className="p-4 font-bold text-[#101820]">
-                          <div>{new Date(m.date).toLocaleDateString()}</div>
-                          <div className="text-[10px] text-[#8B969E] font-normal">{m.venue || "Stadium"}</div>
+                      <tr key={m.id} className="hover:bg-[#F4F3EE]/50 transition-colors">
+                        <td className="p-4 font-mono font-semibold">
+                          {new Date(m.date).toLocaleDateString()}
+                        </td>
+                        <td className="p-4 font-semibold">{m.sport}</td>
+                        <td className="p-4">
+                          <div className="font-bold">{m.opponentName}</div>
+                          {m.venue && <div className="text-[11px] text-[#8B969E]">{m.venue}</div>}
                         </td>
                         <td className="p-4">
-                          <div className="font-bold text-[#101820] text-sm">vs {m.opponentName}</div>
-                          <div className="text-[10px] text-[#8B969E] uppercase font-medium">{m.sport}</div>
-                        </td>
-                        <td className="p-4">
-                          <span className="text-base font-extrabold text-[#101820]">
+                          <span className="font-mono font-bold text-sm">
                             {m.academyTeamScore} - {m.opponentScore}
                           </span>
-                          <span className="text-[10px] text-[#8B969E] ml-1.5 uppercase font-medium">
-                            ({m.scoreLabel})
-                          </span>
                         </td>
+                        <td className="p-4 font-semibold">{m.participantsCount} Players</td>
                         <td className="p-4">
                           {m.topScorers && m.topScorers.length > 0 ? (
                             <div className="space-y-0.5">
-                              {m.topScorers.map((s, idx) => (
-                                <div key={idx} className="text-[11px] font-semibold text-[#101820]">
-                                  {s.name}: <span className="font-bold text-[#101820]">{s.score}</span>
+                              {m.topScorers.map((ts, idx) => (
+                                <div key={idx} className="text-[11px] text-[#8B969E]">
+                                  <span className="font-semibold text-[#101820]">{ts.name}</span>:{" "}
+                                  <span className="font-mono">{ts.score}</span>
                                 </div>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-[#8B969E] text-[10px]">No scorers</span>
+                            <span className="text-[#8B969E]">-</span>
                           )}
-                        </td>
-                        <td className="p-4 font-bold text-[#101820]">
-                          {m.participantsCount} Players
                         </td>
                         <td className="p-4">
                           <StatusBadge status={m.result} type="match" />
@@ -379,6 +401,22 @@ export default function CoachMatchesPage() {
                   />
                 </div>
 
+                {/* Sport Discipline Locked Display */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
+                    Sport Discipline
+                  </label>
+                  <div className="flex h-11 w-full items-center justify-between rounded-md border border-[#DCE1E3] bg-[#F4F3EE] px-3 text-sm font-bold text-[#101820]">
+                    <span className="flex items-center gap-2">
+                      <Lock className="h-4 w-4 text-[#101820]" />
+                      {assignedSport || matchForm.sport}
+                    </span>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#C6F432] text-[#101820] px-2 py-0.5 rounded border border-[#101820]">
+                      Assigned Discipline
+                    </span>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-3 gap-4">
                   <Input
                     label="Our Academy Score *"
@@ -451,12 +489,12 @@ export default function CoachMatchesPage() {
                               <input
                                 type="checkbox"
                                 checked={isSelected}
-                                onChange={() => handleTogglePlayer(player.playerId)}
-                                className="h-4 w-4 rounded border-[#DCE1E3] text-[#101820] focus:ring-[#C6F432]"
+                                onChange={() => handleToggleParticipant(player.playerId)}
+                                className="h-4 w-4 rounded border-[#DCE1E3] text-[#101820] focus:ring-[#101820]"
                               />
                               <div>
                                 <div className="font-bold text-[#101820]">{player.name}</div>
-                                <div className="text-[10px] text-[#8B969E]">
+                                <div className="text-[10px] text-[#8B969E] font-mono">
                                   {player.playerCode} • {player.position}
                                 </div>
                               </div>
@@ -464,20 +502,17 @@ export default function CoachMatchesPage() {
 
                             {isSelected && (
                               <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-[#8B969E] uppercase font-bold">
-                                  Score:
+                                <span className="text-[10px] font-bold text-[#8B969E] uppercase">
+                                  Score Contribution:
                                 </span>
                                 <input
                                   type="number"
                                   min="0"
+                                  className="w-16 h-8 rounded border border-[#DCE1E3] px-2 text-right font-mono font-bold text-xs"
                                   value={participantData.score}
                                   onChange={(e) =>
-                                    handlePlayerScoreChange(
-                                      player.playerId,
-                                      parseInt(e.target.value, 10) || 0
-                                    )
+                                    handleUpdateScore(player.playerId, parseInt(e.target.value, 10) || 0)
                                   }
-                                  className="h-8 w-16 rounded border border-[#DCE1E3] bg-[#F4F3EE] px-2 text-center text-[#101820] font-bold"
                                 />
                               </div>
                             )}
@@ -486,8 +521,8 @@ export default function CoachMatchesPage() {
                       })}
                     </div>
                   ) : (
-                    <div className="p-4 text-center text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg">
-                      No present players found in this session.
+                    <div className="py-6 text-center text-xs text-[#8B969E] border border-dashed border-[#DCE1E3] rounded-xl p-4">
+                      No PRESENT players found for this practice session.
                     </div>
                   )}
                 </div>
@@ -500,8 +535,8 @@ export default function CoachMatchesPage() {
                     type="submit"
                     variant="athletic"
                     size="sm"
-                    disabled={closedSessions.length === 0}
                     isLoading={submitting}
+                    disabled={closedSessions.length === 0}
                   >
                     Save Match Record
                   </Button>

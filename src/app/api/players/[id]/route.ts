@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { requireAuth } from "@/lib/permissions/auth-guard";
+import { requireAuth, resolveUserSport } from "@/lib/permissions/auth-guard";
 import { getPlayerById, updatePlayer } from "@/modules/players/player-service";
 import { calculatePlayerEligibilityFromDb } from "@/modules/eligibility/eligibility-service";
 import { MatchParticipant, Attendance, Scout } from "@/models";
@@ -23,9 +23,17 @@ export async function GET(
     const player = await getPlayerById(academyId, playerId);
 
     // Permission rules:
-    // 1. Coach can only view their assigned player
-    if (session.role === "COACH" && player.coachId._id.toString() !== session.coachId) {
-      throw new ForbiddenError("Unauthorized: You can only view players assigned to your coaching roster.");
+    // 1. Coach can only view their assigned player within their assigned sport
+    if (session.role === "COACH") {
+      if (player.coachId._id.toString() !== session.coachId) {
+        throw new ForbiddenError("Unauthorized: You can only view players assigned to your coaching roster.");
+      }
+      const coachSport = await resolveUserSport(session);
+      if (coachSport && player.sport.trim().toLowerCase() !== coachSport.trim().toLowerCase()) {
+        throw new ForbiddenError(
+          `Access denied: You are assigned to ${coachSport} and cannot access ${player.sport} player profiles.`
+        );
+      }
     }
 
     // 2. Player can only view their own record
@@ -42,7 +50,7 @@ export async function GET(
     // Real-time calculation from actual database records!
     const eligibility = await calculatePlayerEligibilityFromDb(academyId, playerId);
 
-    // 3. Scout can only view their assigned coach's players, AND only if trial-ready (READY)!
+    // 3. Scout can only view their assigned coach's players, AND only if trial-ready (READY), AND only in their assigned sport!
     if (session.role === "SCOUT") {
       let targetCoachId = session.coachId;
       if (!targetCoachId) {
@@ -57,6 +65,13 @@ export async function GET(
 
       if (!targetCoachId || player.coachId._id.toString() !== targetCoachId) {
         throw new ForbiddenError("Unauthorized: Scouts can only view athletes under their assigned coach.");
+      }
+
+      const scoutSport = await resolveUserSport(session);
+      if (scoutSport && player.sport.trim().toLowerCase() !== scoutSport.trim().toLowerCase()) {
+        throw new ForbiddenError(
+          `Access denied: You are assigned to ${scoutSport} and cannot view ${player.sport} athletes.`
+        );
       }
 
       if (eligibility.status !== "READY") {
@@ -165,12 +180,15 @@ export async function PUT(
       return NextResponse.json({ success: false, error: "Academy context missing" }, { status: 400 });
     }
 
+    const coachSport = session.role === "COACH" ? await resolveUserSport(session) : undefined;
     const body = await req.json();
+
     const updated = await updatePlayer(
       academyId,
       playerId,
       body,
-      session.role === "COACH" ? session.coachId : undefined
+      session.role === "COACH" ? session.coachId : undefined,
+      coachSport
     );
 
     return NextResponse.json({ success: true, player: updated });

@@ -86,6 +86,7 @@ export interface IScout {
   name?: string;
   email?: string;
   assignedCoachId: string;
+  sport?: string;
   organization?: string;
   experienceYears?: number;
   status: 'ACTIVE' | 'INACTIVE';
@@ -234,6 +235,7 @@ export interface AuthSessionPayload {
   academyId?: string;
   coachId?: string;
   playerId?: string;
+  sport?: string;
   iat?: number;
   exp?: number;
 }

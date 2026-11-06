@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { requireAuth } from "@/lib/permissions/auth-guard";
+import { requireAuth, resolveUserSport } from "@/lib/permissions/auth-guard";
 import { getMatchDetails } from "@/modules/matches/match-service";
-import { handleApiError } from "@/lib/errors";
+import { handleApiError, ForbiddenError } from "@/lib/errors";
+import { Scout, MatchParticipant } from "@/models";
 
 export async function GET(
   req: Request,
@@ -18,7 +19,30 @@ export async function GET(
       return NextResponse.json({ success: false, error: "Academy context missing" }, { status: 400 });
     }
 
-    const details = await getMatchDetails(academyId, matchId);
+    let filterCoachId: string | null = null;
+    let filterSport: string | null = null;
+
+    if (session.role === "COACH") {
+      filterCoachId = session.coachId || null;
+      filterSport = await resolveUserSport(session);
+    } else if (session.role === "SCOUT") {
+      filterSport = await resolveUserSport(session);
+      const scoutRecord = await Scout.findOne({ userId: session.userId, academyId });
+      filterCoachId = scoutRecord?.assignedCoachId?.toString() || null;
+    }
+
+    const details = await getMatchDetails(academyId, matchId, filterCoachId, filterSport);
+
+    // If role is PLAYER, verify that player is a participant in this match
+    if (session.role === "PLAYER") {
+      const isParticipant = details.participants.some(
+        (p) => p.playerId === session.playerId || p.playerId === session.userId
+      );
+      if (!isParticipant) {
+        throw new ForbiddenError("Access denied: You can only view matches you participated in.");
+      }
+    }
+
     return NextResponse.json({ success: true, ...details });
   } catch (error) {
     const { status, body } = handleApiError(error);

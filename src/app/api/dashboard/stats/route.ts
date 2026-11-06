@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { requireAuth } from "@/lib/permissions/auth-guard";
+import { requireAuth, resolveUserSport } from "@/lib/permissions/auth-guard";
 import {
   Academy,
   User,
@@ -76,7 +76,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: false, error: "Academy context missing" }, { status: 400 });
     }
 
-    // 2. ACADEMY OWNER
+    // 2. ACADEMY OWNER (Full multi-sport visibility across academy)
     if (role === "ACADEMY_OWNER") {
       const [
         totalCoaches,
@@ -123,12 +123,15 @@ export async function GET(req: Request) {
       });
     }
 
-    // 3. COACH DASHBOARD
+    // 3. COACH DASHBOARD (Strict Sport-Based Data Isolation)
     if (role === "COACH") {
       const coachId = session.coachId;
       if (!coachId) {
         return NextResponse.json({ success: false, error: "Coach profile missing" }, { status: 400 });
       }
+
+      const coachSport = await resolveUserSport(session);
+      const sportFilter = coachSport ? { sport: new RegExp(`^${coachSport.trim()}$`, "i") } : {};
 
       const [
         assignedPlayersCount,
@@ -136,16 +139,18 @@ export async function GET(req: Request) {
         recentMatches,
         eligibilityData,
       ] = await Promise.all([
-        Player.countDocuments({ academyId, coachId, status: "ACTIVE" }),
-        PracticeSession.find({ academyId, coachId }).sort({ date: -1 }).limit(5).lean(),
-        Match.find({ academyId, coachId }).sort({ date: -1 }).limit(5).lean(),
-        getCoachEligibilityOverview(academyId, coachId),
+        Player.countDocuments({ academyId, coachId, status: "ACTIVE", ...sportFilter }),
+        PracticeSession.find({ academyId, coachId, ...sportFilter }).sort({ date: -1 }).limit(5).lean(),
+        Match.find({ academyId, coachId, ...sportFilter }).sort({ date: -1 }).limit(5).lean(),
+        getCoachEligibilityOverview(academyId, coachId, coachSport),
       ]);
 
       return NextResponse.json({
         success: true,
         role,
+        sport: coachSport,
         stats: {
+          assignedSport: coachSport,
           assignedPlayersCount,
           readyCount: eligibilityData.readyCount,
           notReadyCount: eligibilityData.notReadyCount,
@@ -169,16 +174,16 @@ export async function GET(req: Request) {
       });
     }
 
-    // 4. SCOUT DASHBOARD
+    // 4. SCOUT DASHBOARD (Strict Sport-Based Data Isolation & READY gate)
     if (role === "SCOUT") {
-      const scout = await Scout.findOne({ userId: session.userId, academyId })
+      const scoutRecord = await Scout.findOne({ userId: session.userId, academyId })
         .populate({
           path: "assignedCoachId",
           populate: { path: "userId", select: "name email" },
         })
         .lean();
 
-      if (!scout || !scout.assignedCoachId) {
+      if (!scoutRecord || !scoutRecord.assignedCoachId) {
         return NextResponse.json({
           success: true,
           role,
@@ -190,19 +195,22 @@ export async function GET(req: Request) {
         });
       }
 
-      const coachDoc = scout.assignedCoachId as unknown as {
+      const coachDoc = scoutRecord.assignedCoachId as unknown as {
         _id: { toString(): string };
         sport: string;
         userId: { name: string };
       };
 
-      const eligibility = await getCoachEligibilityOverview(academyId, coachDoc._id.toString());
+      const scoutSport = scoutRecord.sport || coachDoc.sport;
+      const eligibility = await getCoachEligibilityOverview(academyId, coachDoc._id.toString(), scoutSport);
       const readyPlayers = eligibility.players.filter((p) => p.status === "READY");
 
       return NextResponse.json({
         success: true,
         role,
+        sport: scoutSport,
         stats: {
+          assignedSport: scoutSport,
           assignedCoach: {
             id: coachDoc._id.toString(),
             name: coachDoc.userId?.name || "Coach",
@@ -239,6 +247,7 @@ export async function GET(req: Request) {
       return NextResponse.json({
         success: true,
         role,
+        sport: player?.sport,
         stats: {
           player: {
             id: player?._id.toString(),

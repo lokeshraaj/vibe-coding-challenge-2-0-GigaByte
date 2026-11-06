@@ -67,7 +67,7 @@ export async function calculatePlayerEligibilityFromDb(
 
 /**
  * SCOUT DIRECTORY:
- * Strict Requirement: Scout can ONLY see players who are READY under their assigned coach!
+ * Strict Requirement: Scout can ONLY see players who are READY under their assigned coach & sport!
  */
 export async function getScoutTalentDirectory(
   academyId: string,
@@ -81,7 +81,7 @@ export async function getScoutTalentDirectory(
   };
 
   if (filter?.sport && filter.sport !== "ALL") {
-    playerQuery.sport = new RegExp(`^${filter.sport}$`, "i");
+    playerQuery.sport = new RegExp(`^${filter.sport.trim()}$`, "i");
   }
 
   if (filter?.search && filter.search.trim()) {
@@ -106,12 +106,22 @@ export async function getScoutTalentDirectory(
 /**
  * Coach & Owner Eligibility Overview
  */
-export async function getCoachEligibilityOverview(academyId: string, coachId: string) {
-  const players = await Player.find({
+export async function getCoachEligibilityOverview(
+  academyId: string,
+  coachId: string,
+  sport?: string | null
+) {
+  const query: Record<string, unknown> = {
     academyId: new mongoose.Types.ObjectId(academyId),
     coachId: new mongoose.Types.ObjectId(coachId),
     status: "ACTIVE",
-  }).sort({ name: 1 });
+  };
+
+  if (sport && sport !== "ALL") {
+    query.sport = new RegExp(`^${sport.trim()}$`, "i");
+  }
+
+  const players = await Player.find(query).sort({ name: 1 });
 
   const rosterEligibility = await Promise.all(
     players.map((p) => calculatePlayerEligibilityFromDb(academyId, p._id.toString()))
@@ -138,12 +148,13 @@ export async function getAcademyEligibilityOverview(academyId: string) {
     players.map((p) => calculatePlayerEligibilityFromDb(academyId, p._id.toString()))
   );
 
-  const readyCount = rosterEligibility.filter((p) => p.status === "READY").length;
-  const notReadyCount = rosterEligibility.filter((p) => p.status === "NOT_READY").length;
+  const readyPlayers = rosterEligibility.filter((p) => p.status === "READY");
+  const notReadyPlayers = rosterEligibility.filter((p) => p.status === "NOT_READY");
 
   return {
     totalPlayers: players.length,
-    readyCount,
-    notReadyCount,
+    readyCount: readyPlayers.length,
+    notReadyCount: notReadyPlayers.length,
+    players: rosterEligibility,
   };
 }

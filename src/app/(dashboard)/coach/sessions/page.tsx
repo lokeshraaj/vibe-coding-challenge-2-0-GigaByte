@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   XCircle,
   Lock,
+  Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,13 +41,14 @@ interface RosterPlayerAttendance {
 export default function CoachSessionsPage() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assignedSport, setAssignedSport] = useState<string>("");
 
   // New session modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newSessionForm, setNewSessionForm] = useState({
     date: new Date().toISOString().split("T")[0],
-    sport: "Football",
+    sport: "Cricket",
     title: "",
   });
 
@@ -78,6 +80,21 @@ export default function CoachSessionsPage() {
 
   useEffect(() => {
     fetchSessions();
+    async function fetchMe() {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user?.sport) {
+            setAssignedSport(data.user.sport);
+            setNewSessionForm((prev) => ({ ...prev, sport: data.user.sport }));
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    fetchMe();
   }, []);
 
   const handleOpenSessionSheet = async (sessionId: string) => {
@@ -114,17 +131,23 @@ export default function CoachSessionsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...newSessionForm,
+          sport: assignedSport || newSessionForm.sport,
           coachId: "self",
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create session");
+      if (!res.ok) throw new Error(data.error || "Failed to create practice session");
 
-      toast.success("Practice session opened!");
+      toast.success("Practice session scheduled successfully!");
       setIsCreateOpen(false);
+      setNewSessionForm({
+        date: new Date().toISOString().split("T")[0],
+        sport: assignedSport || "Cricket",
+        title: "",
+      });
       fetchSessions();
-      handleOpenSessionSheet(data.session._id);
+      handleOpenSessionSheet(data.session.id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error creating session");
     } finally {
@@ -132,8 +155,12 @@ export default function CoachSessionsPage() {
     }
   };
 
-  const handleSetPlayerStatus = (playerId: string, status: "PRESENT" | "ABSENT") => {
-    if (activeSessionDetails?.session.status === "CLOSED") return;
+  const handleToggleAttendance = (playerId: string, status: "PRESENT" | "ABSENT") => {
+    if (activeSessionDetails?.session.status === "CLOSED") {
+      toast.error("Violation: Cannot modify attendance of a CLOSED and locked session.");
+      return;
+    }
+
     const next = new Map(attendanceRecords);
     next.set(playerId, status);
     setAttendanceRecords(next);
@@ -141,7 +168,7 @@ export default function CoachSessionsPage() {
 
   const handleMarkAll = (status: "PRESENT" | "ABSENT") => {
     if (activeSessionDetails?.session.status === "CLOSED") return;
-    const next = new Map<string, "PRESENT" | "ABSENT">();
+    const next = new Map(attendanceRecords);
     activeSessionDetails?.roster.forEach((r: RosterPlayerAttendance) => {
       next.set(r.playerId, status);
     });
@@ -151,7 +178,6 @@ export default function CoachSessionsPage() {
   const handleSaveAttendance = async () => {
     if (!activeSessionId) return;
     setSavingAttendance(true);
-
     try {
       const records = Array.from(attendanceRecords.entries()).map(([playerId, status]) => ({
         playerId,
@@ -165,7 +191,7 @@ export default function CoachSessionsPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to save attendance");
+      if (!res.ok) throw new Error(data.error || "Failed to record attendance");
 
       toast.success("Attendance saved successfully!");
       fetchSessions();
@@ -180,22 +206,24 @@ export default function CoachSessionsPage() {
   const handleCloseSession = async () => {
     if (!activeSessionId) return;
 
-    // Check if every player has a status
-    const totalRoster = activeSessionDetails?.roster.length || 0;
+    // Check if every roster member has a status
+    const totalRoster = activeSessionDetails?.roster?.length || 0;
     if (attendanceRecords.size < totalRoster) {
-      toast.error(
-        `Cannot close session: Missing attendance for ${totalRoster - attendanceRecords.size} player(s). Mark all players first.`
+      const unassignedCount = totalRoster - attendanceRecords.size;
+      const proceed = confirm(
+        `Warning: ${unassignedCount} athlete(s) have not been marked PRESENT or ABSENT.\n\nOnce LOCKED, attendance is strictly IMMUTABLE and cannot be altered.\n\nDo you want to proceed with closing?`
       );
-      return;
-    }
-
-    if (!confirm("Are you sure you want to LOCK and CLOSE this session? Once closed, attendance records become completely immutable and will count towards trial eligibility.")) {
-      return;
+      if (!proceed) return;
+    } else {
+      const proceed = confirm(
+        "CRITICAL IMMUTABILITY WARNING:\n\nClosing this session permanently locks attendance records and calculates match-eligibility. You will NOT be able to modify attendance after this.\n\nLock and close now?"
+      );
+      if (!proceed) return;
     }
 
     setClosingSession(true);
     try {
-      // First save current attendance
+      // First save current draft
       const records = Array.from(attendanceRecords.entries()).map(([playerId, status]) => ({
         playerId,
         status,
@@ -231,11 +259,19 @@ export default function CoachSessionsPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
-              Practice Sessions & Attendance
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+                Practice Sessions & Attendance
+              </h1>
+              {assignedSport && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
+                  <Shield className="h-3.5 w-3.5" />
+                  {assignedSport}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
-              Log Rosters & Enforce Attendance Immutability
+              Log Rosters & Enforce Attendance Immutability • {assignedSport || "Assigned"} Sessions Only
             </p>
           </div>
 
@@ -304,45 +340,49 @@ export default function CoachSessionsPage() {
             </Card>
           </div>
 
-          {/* Right Column: Attendance Marking Workspace */}
+          {/* Right Column: Attendance Roster Sheet */}
           <div className="lg:col-span-7">
-            {activeSessionId && activeSessionDetails ? (
+            {loadingDetails ? (
+              <Card className="p-12 text-center text-xs text-[#8B969E] border-[#DCE1E3] bg-white shadow-sm">
+                Loading session roster...
+              </Card>
+            ) : activeSessionDetails ? (
               <Card className="border-[#DCE1E3] bg-white shadow-sm">
-                <CardHeader className="border-b border-[#DCE1E3] pb-4">
+                <CardHeader className="pb-4 border-b border-[#DCE1E3]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-bold uppercase text-[#101820]">
+                        <h2 className="text-lg font-bold uppercase text-[#101820]">
                           {activeSessionDetails.session.title || "Practice Session"}
-                        </h3>
+                        </h2>
                         <StatusBadge status={activeSessionDetails.session.status} type="session" />
                       </div>
-                      <p className="text-xs text-[#8B969E] mt-0.5">
-                        Date: {new Date(activeSessionDetails.session.date).toLocaleDateString()} • Sport:{" "}
-                        {activeSessionDetails.session.sport}
+                      <p className="text-xs text-[#8B969E] mt-0.5 font-medium">
+                        {new Date(activeSessionDetails.session.date).toLocaleDateString()} •{" "}
+                        {activeSessionDetails.session.sport} Discipline
                       </p>
                     </div>
 
                     {isClosed ? (
-                      <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-bold bg-emerald-50 px-3 py-1.5 rounded border border-emerald-200">
-                        <Lock className="h-4 w-4" />
-                        <span>IMMUTABLE (LOCKED)</span>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F4F3EE] text-xs font-bold text-[#101820] border border-[#DCE1E3]">
+                        <Lock className="h-3.5 w-3.5 text-[#101820]" />
+                        <span>Attendance Locked</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
                           onClick={() => handleMarkAll("PRESENT")}
-                          className="text-[11px] text-emerald-700 hover:bg-emerald-50 font-bold"
+                          className="text-xs h-8 border-[#DCE1E3] bg-white text-[#101820]"
                         >
                           All Present
                         </Button>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
                           onClick={() => handleMarkAll("ABSENT")}
-                          className="text-[11px] text-rose-700 hover:bg-rose-50 font-bold"
+                          className="text-xs h-8 border-[#DCE1E3] bg-white text-[#101820]"
                         >
                           All Absent
                         </Button>
@@ -352,79 +392,65 @@ export default function CoachSessionsPage() {
                 </CardHeader>
 
                 <CardContent className="p-0">
-                  {/* Summary bar */}
-                  <div className="grid grid-cols-3 bg-[#F4F3EE] p-3 text-center border-b border-[#DCE1E3] text-xs">
-                    <div>
-                      <span className="text-[#8B969E] uppercase font-bold text-[10px] block">
-                        Roster
-                      </span>
-                      <span className="font-extrabold text-[#101820] text-base">
-                        {activeSessionDetails.roster.length}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-emerald-700 uppercase font-bold text-[10px] block">
-                        Present
-                      </span>
-                      <span className="font-extrabold text-emerald-700 text-base">
-                        {Array.from(attendanceRecords.values()).filter((v) => v === "PRESENT").length}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-rose-700 uppercase font-bold text-[10px] block">
-                        Absent
-                      </span>
-                      <span className="font-extrabold text-rose-700 text-base">
-                        {Array.from(attendanceRecords.values()).filter((v) => v === "ABSENT").length}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Roster Attendance Table */}
-                  <div className="max-h-[420px] overflow-y-auto divide-y divide-[#DCE1E3]">
+                  {/* Attendance Roster Table */}
+                  <div className="divide-y divide-[#DCE1E3]">
                     {activeSessionDetails.roster.map((player: RosterPlayerAttendance) => {
                       const currentStatus = attendanceRecords.get(player.playerId);
+
                       return (
                         <div
                           key={player.playerId}
-                          className="flex items-center justify-between p-3.5 hover:bg-[#F4F3EE] transition-colors text-xs"
+                          className="flex items-center justify-between p-4 hover:bg-[#F4F3EE]/50 transition-colors"
                         >
                           <div>
-                            <div className="font-bold text-[#101820] text-sm">{player.name}</div>
-                            <div className="text-[11px] text-[#8B969E]">
-                              {player.playerCode} • {player.position}
+                            <div className="text-sm font-bold text-[#101820]">{player.name}</div>
+                            <div className="text-xs text-[#8B969E] flex items-center gap-2 mt-0.5">
+                              <span className="font-mono text-[#101820] font-semibold">{player.playerCode}</span>
+                              <span>•</span>
+                              <span>{player.position}</span>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              disabled={isClosed}
-                              onClick={() => handleSetPlayerStatus(player.playerId, "PRESENT")}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold uppercase transition-all ${
+                          {/* Quick Toggle Controls */}
+                          {isClosed ? (
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider ${
                                 currentStatus === "PRESENT"
-                                  ? "bg-emerald-600 text-white shadow-xs"
-                                  : "bg-white text-[#202A32] border border-[#DCE1E3] hover:border-emerald-500"
-                              } ${isClosed ? "cursor-not-allowed opacity-75" : ""}`}
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : "bg-rose-50 text-rose-700 border border-rose-200"
+                              }`}
                             >
-                              <CheckCircle2 className="h-4 w-4" />
-                              <span>Present</span>
-                            </button>
+                              {currentStatus || "NOT MARKED"}
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleAttendance(player.playerId, "PRESENT")}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                                  currentStatus === "PRESENT"
+                                    ? "bg-emerald-600 text-white shadow-xs"
+                                    : "bg-white text-[#8B969E] border border-[#DCE1E3] hover:border-emerald-600 hover:text-emerald-600"
+                                }`}
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                <span>Present</span>
+                              </button>
 
-                            <button
-                              type="button"
-                              disabled={isClosed}
-                              onClick={() => handleSetPlayerStatus(player.playerId, "ABSENT")}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold uppercase transition-all ${
-                                currentStatus === "ABSENT"
-                                  ? "bg-rose-600 text-white shadow-xs"
-                                  : "bg-white text-[#202A32] border border-[#DCE1E3] hover:border-rose-500"
-                              } ${isClosed ? "cursor-not-allowed opacity-75" : ""}`}
-                            >
-                              <XCircle className="h-4 w-4" />
-                              <span>Absent</span>
-                            </button>
-                          </div>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleAttendance(player.playerId, "ABSENT")}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                                  currentStatus === "ABSENT"
+                                    ? "bg-rose-600 text-white shadow-xs"
+                                    : "bg-white text-[#8B969E] border border-[#DCE1E3] hover:border-rose-600 hover:text-rose-600"
+                                }`}
+                              >
+                                <XCircle className="h-3.5 w-3.5" />
+                                <span>Absent</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -494,19 +520,17 @@ export default function CoachSessionsPage() {
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
-                    Sport Discipline *
+                    Sport Discipline (Locked to Assigned Sport)
                   </label>
-                  <select
-                    className="flex h-11 w-full rounded-md border border-[#DCE1E3] bg-white px-3 py-2 text-sm text-[#101820] focus-visible:outline-none focus-visible:border-[#101820]"
-                    value={newSessionForm.sport}
-                    onChange={(e) => setNewSessionForm({ ...newSessionForm, sport: e.target.value })}
-                  >
-                    <option value="Football">Football</option>
-                    <option value="Basketball">Basketball</option>
-                    <option value="Cricket">Cricket</option>
-                    <option value="Tennis">Tennis</option>
-                    <option value="Hockey">Hockey</option>
-                  </select>
+                  <div className="flex h-11 w-full items-center justify-between rounded-md border border-[#DCE1E3] bg-[#F4F3EE] px-3 text-sm font-bold text-[#101820]">
+                    <span className="flex items-center gap-2">
+                      <Lock className="h-4 w-4 text-[#101820]" />
+                      {assignedSport || newSessionForm.sport}
+                    </span>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#C6F432] text-[#101820] px-2 py-0.5 rounded border border-[#101820]">
+                      Assigned Discipline
+                    </span>
+                  </div>
                 </div>
 
                 <Input

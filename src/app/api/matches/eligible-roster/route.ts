@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { requireRole } from "@/lib/permissions/auth-guard";
+import { requireRole, resolveUserSport } from "@/lib/permissions/auth-guard";
 import { getEligibleMatchRoster } from "@/modules/matches/match-service";
 import { handleApiError } from "@/lib/errors";
 
@@ -20,7 +20,16 @@ export async function GET(req: Request) {
     }
 
     await connectToDatabase();
-    const roster = await getEligibleMatchRoster(academyId, sessionId);
+
+    let coachId: string | null = null;
+    let coachSport: string | null = null;
+
+    if (session.role === "COACH") {
+      coachId = session.coachId || null;
+      coachSport = await resolveUserSport(session);
+    }
+
+    const roster = await getEligibleMatchRoster(academyId, sessionId, coachId, coachSport);
 
     return NextResponse.json({ success: true, eligiblePlayers: roster });
   } catch (error) {

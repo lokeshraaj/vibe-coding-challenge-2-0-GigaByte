@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { requireRole } from "@/lib/permissions/auth-guard";
+import { requireRole, resolveUserSport } from "@/lib/permissions/auth-guard";
 import { sessionCreateSchema } from "@/lib/validation/schemas";
 import { createPracticeSession, listSessionsByCoach } from "@/modules/sessions/session-service";
 import { handleApiError, ForbiddenError } from "@/lib/errors";
@@ -17,16 +17,19 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     let coachId = searchParams.get("coachId") || undefined;
+    let coachSport: string | undefined = undefined;
 
     if (session.role === "COACH") {
       coachId = session.coachId;
+      const sport = await resolveUserSport(session);
+      if (sport) coachSport = sport;
     }
 
     if (!coachId) {
       return NextResponse.json({ success: true, sessions: [] });
     }
 
-    const sessions = await listSessionsByCoach(academyId, coachId);
+    const sessions = await listSessionsByCoach(academyId, coachId, coachSport);
     return NextResponse.json({ success: true, sessions });
   } catch (error) {
     const { status, body } = handleApiError(error);
@@ -48,18 +51,36 @@ export async function POST(req: Request) {
     const validatedData = sessionCreateSchema.parse(body);
 
     let coachId = validatedData.coachId;
+    let coachSport: string | undefined = undefined;
+
     if (session.role === "COACH") {
       if (!session.coachId) {
         throw new ForbiddenError("No coach profile associated with this account.");
       }
       coachId = session.coachId;
+      const resolvedSport = await resolveUserSport(session);
+      if (resolvedSport) {
+        coachSport = resolvedSport;
+        if (
+          validatedData.sport &&
+          validatedData.sport.trim().toLowerCase() !== resolvedSport.trim().toLowerCase()
+        ) {
+          throw new ForbiddenError(
+            `Unauthorized sport: You are restricted to ${resolvedSport} and cannot create a ${validatedData.sport} session.`
+          );
+        }
+        validatedData.sport = resolvedSport;
+      }
     }
 
-    const newSession = await createPracticeSession({
-      academyId,
-      ...validatedData,
-      coachId,
-    });
+    const newSession = await createPracticeSession(
+      {
+        academyId,
+        ...validatedData,
+        coachId,
+      },
+      coachSport
+    );
 
     return NextResponse.json({ success: true, session: newSession }, { status: 201 });
   } catch (error) {
