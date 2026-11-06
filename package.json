@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed": "tsx src/lib/db/seed.ts",
-    "provision:super-admin": "tsx --env-file=.env.local src/scripts/provision-super-admin.ts"
+    "provision:super-admin": "tsx --env-file=.env.local src/scripts/provision-super-admin.ts",
+    "migrate:academy-codes": "tsx --env-file=.env.local src/scripts/migrate-academy-codes.ts"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.11.3",

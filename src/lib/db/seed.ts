@@ -10,8 +10,11 @@ import {
   Attendance,
   Match,
   MatchParticipant,
+  IdCounter,
+  AcademyCodeCounter,
 } from "@/models";
 import { hashPassword } from "../auth/password";
+import { generateAcademyCode, generateAthlixId } from "../id-generator";
 
 export async function seedDatabase() {
   console.log("Connecting to database for seeding...");
@@ -28,6 +31,8 @@ export async function seedDatabase() {
     Attendance.deleteMany({}),
     Match.deleteMany({}),
     MatchParticipant.deleteMany({}),
+    IdCounter.deleteMany({}),
+    AcademyCodeCounter.deleteMany({}),
   ]);
 
   // 1. Create Platform Super Admin
@@ -41,7 +46,7 @@ export async function seedDatabase() {
   });
   console.log("Super Admin seeded: superadmin@athlix.com");
 
-  // 2. Create Academy A (Apex Sports Academy)
+  // 2. Create Academy A (Apex Sports Academy in Greater London)
   const academyAId = new mongoose.Types.ObjectId();
   const ownerAId = new mongoose.Types.ObjectId();
   const ownerAPassword = await hashPassword("ApexOwner2026!");
@@ -56,10 +61,14 @@ export async function seedDatabase() {
     status: "ACTIVE",
   });
 
+  const academyACode = await generateAcademyCode("Greater London");
+
   const academyA = await Academy.create({
     _id: academyAId,
     name: "Apex Elite Sports Academy",
     slug: "apex-elite",
+    academyCode: academyACode,
+    state: "Greater London",
     description: "Premier competitive training facility for future professional athletes.",
     location: {
       address: "100 Wembley Way",
@@ -73,12 +82,18 @@ export async function seedDatabase() {
     ownerId: ownerAId,
     status: "ACTIVE",
   });
-  console.log("Academy A seeded:", academyA.name);
+  console.log(`Academy A seeded: ${academyA.name} [Code: ${academyA.academyCode}]`);
 
   // 3. Create Coach 1 (Football) under Academy A
   const coach1UserId = new mongoose.Types.ObjectId();
   const coach1Id = new mongoose.Types.ObjectId();
   const coach1Password = await hashPassword("CoachMarcus2026!");
+
+  const coach1Code = await generateAthlixId({
+    academyId: academyAId,
+    userType: "COACH",
+    sport: "Football",
+  });
 
   const coach1User = await User.create({
     _id: coach1UserId,
@@ -95,6 +110,7 @@ export async function seedDatabase() {
     _id: coach1Id,
     academyId: academyAId,
     userId: coach1UserId,
+    coachCode: coach1Code,
     sport: "Football",
     specialization: "Attacking Tactics & High Pressing",
     experienceYears: 12,
@@ -106,6 +122,12 @@ export async function seedDatabase() {
   const scout1UserId = new mongoose.Types.ObjectId();
   const scout1Id = new mongoose.Types.ObjectId();
   const scout1Password = await hashPassword("ScoutElena2026!");
+
+  const scout1Code = await generateAthlixId({
+    academyId: academyAId,
+    userType: "SCOUT",
+    sport: "Football",
+  });
 
   const scout1User = await User.create({
     _id: scout1UserId,
@@ -123,6 +145,7 @@ export async function seedDatabase() {
     academyId: academyAId,
     userId: scout1UserId,
     assignedCoachId: coach1Id,
+    scoutCode: scout1Code,
     organization: "Premier Talent Scout Network",
     experienceYears: 8,
     status: "ACTIVE",
@@ -130,13 +153,19 @@ export async function seedDatabase() {
 
   coach1.assignedScoutId = scout1Id;
   await coach1.save();
-  console.log("Coach 1 & Scout 1 linked for Football");
+  console.log(`Coach 1 (${coach1Code}) & Scout 1 (${scout1Code}) linked for Football`);
 
   // 5. Create Players under Coach 1
   // Player 1: Leo Sterling (READY candidate)
   const player1UserId = new mongoose.Types.ObjectId();
   const player1Id = new mongoose.Types.ObjectId();
   const player1Password = await hashPassword("PlayerLeo2026!");
+
+  const player1Code = await generateAthlixId({
+    academyId: academyAId,
+    userType: "PLAYER",
+    sport: "Football",
+  });
 
   await User.create({
     _id: player1UserId,
@@ -154,7 +183,7 @@ export async function seedDatabase() {
     academyId: academyAId,
     coachId: coach1Id,
     userId: player1UserId,
-    playerCode: "FTB-2026-1001",
+    playerCode: player1Code,
     name: "Leo Sterling",
     dateOfBirth: new Date("2008-04-12"),
     gender: "MALE",
@@ -165,10 +194,16 @@ export async function seedDatabase() {
   });
 
   // Player 2: Marcus Vance (Low attendance -> NOT_READY)
+  const player2Code = await generateAthlixId({
+    academyId: academyAId,
+    userType: "PLAYER",
+    sport: "Football",
+  });
+
   const player2 = await Player.create({
     academyId: academyAId,
     coachId: coach1Id,
-    playerCode: "FTB-2026-1002",
+    playerCode: player2Code,
     name: "Marcus Vance",
     dateOfBirth: new Date("2008-09-22"),
     gender: "MALE",
@@ -179,10 +214,16 @@ export async function seedDatabase() {
   });
 
   // Player 3: Zayn Croft (Only 1 match -> NOT_READY)
+  const player3Code = await generateAthlixId({
+    academyId: academyAId,
+    userType: "PLAYER",
+    sport: "Football",
+  });
+
   const player3 = await Player.create({
     academyId: academyAId,
     coachId: coach1Id,
-    playerCode: "FTB-2026-1003",
+    playerCode: player3Code,
     name: "Zayn Croft",
     dateOfBirth: new Date("2007-11-05"),
     gender: "MALE",
@@ -192,7 +233,7 @@ export async function seedDatabase() {
     status: "ACTIVE",
   });
 
-  console.log("3 Players created under Coach Marcus");
+  console.log(`3 Players created under Coach Marcus: ${player1Code}, ${player2Code}, ${player3Code}`);
 
   // 6. Create Practice Sessions (4 Closed Sessions)
   const sessionDates = [
@@ -218,57 +259,37 @@ export async function seedDatabase() {
   }
 
   // Attendance Records:
-  // Player 1 (Leo): PRESENT in all 4 sessions -> 100% attendance!
-  // Player 2 (Marcus): PRESENT in 1, ABSENT in 3 -> 25% attendance!
-  // Player 3 (Zayn): PRESENT in all 4 sessions -> 100% attendance!
-  for (const s of sessions) {
-    await Attendance.create({
-      academyId: academyAId,
-      coachId: coach1Id,
-      sessionId: s._id,
-      playerId: player1._id,
-      status: "PRESENT",
-    });
+  // Session 1: All 3 Present
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[0]._id, playerId: player1._id, status: "PRESENT", recordedBy: coach1UserId });
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[0]._id, playerId: player2._id, status: "PRESENT", recordedBy: coach1UserId });
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[0]._id, playerId: player3._id, status: "PRESENT", recordedBy: coach1UserId });
 
-    await Attendance.create({
-      academyId: academyAId,
-      coachId: coach1Id,
-      sessionId: s._id,
-      playerId: player3._id,
-      status: "PRESENT",
-    });
-  }
+  // Session 2: Leo (P), Marcus (A), Zayn (P)
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[1]._id, playerId: player1._id, status: "PRESENT", recordedBy: coach1UserId });
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[1]._id, playerId: player2._id, status: "ABSENT", recordedBy: coach1UserId });
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[1]._id, playerId: player3._id, status: "PRESENT", recordedBy: coach1UserId });
 
-  // Marcus attendance: session 0 present, sessions 1, 2, 3 absent
-  await Attendance.create({
-    academyId: academyAId,
-    coachId: coach1Id,
-    sessionId: sessions[0]._id,
-    playerId: player2._id,
-    status: "PRESENT",
-  });
-  for (let i = 1; i < 4; i++) {
-    await Attendance.create({
-      academyId: academyAId,
-      coachId: coach1Id,
-      sessionId: sessions[i]._id,
-      playerId: player2._id,
-      status: "ABSENT",
-    });
-  }
-  console.log("4 Closed Practice Sessions and attendance records created");
+  // Session 3: Leo (P), Marcus (A), Zayn (P)
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[2]._id, playerId: player1._id, status: "PRESENT", recordedBy: coach1UserId });
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[2]._id, playerId: player2._id, status: "ABSENT", recordedBy: coach1UserId });
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[2]._id, playerId: player3._id, status: "PRESENT", recordedBy: coach1UserId });
 
-  // 7. Create Matches
-  // Match 1: Linked to session 1 (2026-02-15)
-  // Fielded: Player 1 (Leo, score: 2), Player 3 (Zayn, score: 0)
+  // Session 4: Leo (P), Marcus (P), Zayn (P)
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[3]._id, playerId: player1._id, status: "PRESENT", recordedBy: coach1UserId });
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[3]._id, playerId: player2._id, status: "PRESENT", recordedBy: coach1UserId });
+  await Attendance.create({ academyId: academyAId, sessionId: sessions[3]._id, playerId: player3._id, status: "PRESENT", recordedBy: coach1UserId });
+
+  console.log("Practice sessions and attendance recorded");
+
+  // 7. Create Matches (2 Matches linked to sessions 1 & 4)
   const match1 = await Match.create({
     academyId: academyAId,
     coachId: coach1Id,
-    sessionId: sessions[1]._id,
-    date: sessions[1].date,
+    sessionId: sessions[0]._id,
+    date: sessions[0].date,
     sport: "Football",
-    opponentName: "Arsenal Academy U18",
-    venue: "Emirates Youth Pitch",
+    opponentName: "Arsenal Youth Academy",
+    venue: "Emirates Youth Stadium",
     scoreLabel: "Goals",
     academyTeamScore: 3,
     opponentScore: 1,
@@ -291,8 +312,6 @@ export async function seedDatabase() {
     minutesPlayed: 90,
   });
 
-  // Match 2: Linked to session 3 (2026-02-25)
-  // Fielded: Player 1 (Leo, score: 1) only. (Player 3 was rested)
   const match2 = await Match.create({
     academyId: academyAId,
     coachId: coach1Id,
@@ -332,10 +351,14 @@ export async function seedDatabase() {
     status: "ACTIVE",
   });
 
+  const academyBCode = await generateAcademyCode("New York");
+
   await Academy.create({
     _id: academyBId,
     name: "Vanguard Basketball Academy",
     slug: "vanguard-basketball",
+    academyCode: academyBCode,
+    state: "New York",
     description: "East Coast premier basketball development program.",
     location: {
       address: "500 Madison Ave",
@@ -349,7 +372,7 @@ export async function seedDatabase() {
     ownerId: ownerBId,
     status: "ACTIVE",
   });
-  console.log("Academy B seeded (Vanguard Basketball)");
+  console.log(`Academy B seeded: Vanguard Basketball [Code: ${academyBCode}]`);
 
   console.log("Database seed successfully completed!");
 }

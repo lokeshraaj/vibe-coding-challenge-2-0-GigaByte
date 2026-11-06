@@ -2,7 +2,9 @@ import mongoose from "mongoose";
 import { Academy, User } from "@/models";
 import { hashPassword } from "@/lib/auth/password";
 import { slugify } from "@/lib/utils";
-import { ConflictError, NotFoundError } from "@/lib/errors";
+import { generateAcademyCode } from "@/lib/id-generator";
+import { sendAcademyRegistrationEmail } from "@/lib/email/brevo";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 
 export interface RegisterAcademyInput {
   academyName: string;
@@ -35,6 +37,9 @@ export async function registerAcademy(input: RegisterAcademyInput) {
     slug = `${slug}-${Math.floor(100 + Math.random() * 900)}`;
   }
 
+  // Generate atomic, sequential Academy Code (SSNNNN based on state)
+  const academyCode = await generateAcademyCode(input.state);
+
   const hashedPassword = await hashPassword(input.password);
 
   const ownerUserId = new mongoose.Types.ObjectId();
@@ -54,11 +59,13 @@ export async function registerAcademy(input: RegisterAcademyInput) {
     },
   });
 
-  // Create academy
+  // Create academy with permanent Academy Code and state
   const academy = await Academy.create({
     _id: academyId,
     name: input.academyName.trim(),
     slug,
+    academyCode,
+    state: input.state.trim(),
     description: input.description || "",
     location: {
       address: input.address || "",
@@ -72,11 +79,26 @@ export async function registerAcademy(input: RegisterAcademyInput) {
     status: "ACTIVE",
   });
 
+  // Send welcome confirmation email with official Academy Code
+  try {
+    await sendAcademyRegistrationEmail({
+      toEmail: normalizedOwnerEmail,
+      ownerName: ownerUser.name,
+      academyName: academy.name,
+      academyCode: academy.academyCode!,
+      city: academy.location.city,
+      state: academy.location.state,
+    });
+  } catch (emailErr) {
+    console.error("[Brevo Academy Registration Warning] Welcome email delivery failed, academy preserved:", emailErr);
+  }
+
   return {
     academy: {
       id: academy._id.toString(),
       name: academy.name,
       slug: academy.slug,
+      academyCode: academy.academyCode,
       status: academy.status,
     },
     owner: {
@@ -92,6 +114,21 @@ export async function getAcademyById(academyId: string) {
   const academy = await Academy.findById(academyId).populate("ownerId", "name email");
   if (!academy) {
     throw new NotFoundError("Academy not found");
+  }
+  return academy;
+}
+
+/**
+ * Retrieves and validates an academy by its official Academy Code.
+ */
+export async function getAcademyByCode(academyCode: string) {
+  if (!academyCode) {
+    throw new ValidationError("Academy Code is required");
+  }
+  const cleanCode = academyCode.trim().toUpperCase();
+  const academy = await Academy.findOne({ academyCode: cleanCode });
+  if (!academy) {
+    throw new NotFoundError("Invalid Academy Code. Please check the code provided by your academy.");
   }
   return academy;
 }

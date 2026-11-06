@@ -11,5 +11,6 @@ export * from "./MatchParticipant";
 export * from "./Invitation";
 export * from "./AuditLog";
 export * from "./IdCounter";
+export * from "./AcademyCodeCounter";
 export * from "./OtpChallenge";
 export * from "./SystemProvisioning";

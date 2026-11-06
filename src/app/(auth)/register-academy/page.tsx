@@ -48,7 +48,15 @@ export default function RegisterAcademyPage() {
         throw new Error(data.error || "Academy registration failed");
       }
 
-      toast.success("Academy registered successfully! Welcome to Athlix.");
+      const assignedCode = data.data?.academy?.academyCode;
+      const codeMsg = assignedCode
+        ? ` Your permanent Academy Code is ${assignedCode}.`
+        : "";
+
+      toast.success(`Academy registered successfully!${codeMsg} Welcome to Athlix.`, {
+        duration: 7000,
+      });
+
       router.push("/owner");
       router.refresh();
     } catch (err) {
@@ -115,25 +123,30 @@ export default function RegisterAcademyPage() {
                 <Input
                   label="City *"
                   name="city"
-                  placeholder="e.g. London / Austin"
+                  placeholder="e.g. Patna / Ranchi"
                   value={formData.city}
                   onChange={handleChange}
                   required
                 />
 
-                <Input
-                  label="State / Province *"
-                  name="state"
-                  placeholder="e.g. Texas"
-                  value={formData.state}
-                  onChange={handleChange}
-                  required
-                />
+                <div className="space-y-1">
+                  <Input
+                    label="State / Province *"
+                    name="state"
+                    placeholder="e.g. Bihar / Jharkhand"
+                    value={formData.state}
+                    onChange={handleChange}
+                    required
+                  />
+                  <p className="text-[10px] text-[#8B969E]">
+                    Determines your 2-letter state prefix for your Academy Code (e.g. BI0001, JH0001).
+                  </p>
+                </div>
 
                 <Input
                   label="Country *"
                   name="country"
-                  placeholder="e.g. United Kingdom"
+                  placeholder="e.g. India"
                   value={formData.country}
                   onChange={handleChange}
                   required

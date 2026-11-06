@@ -11,6 +11,7 @@ export async function POST(req: Request) {
     const validatedData = verifyOtpSchema.parse(body);
 
     const result = await verifyRegistrationOtp({
+      academyCode: validatedData.academyCode,
       athlixId: validatedData.athlixId,
       otp: validatedData.otp,
     });

@@ -3,7 +3,7 @@ import { IdRegistrationFlow } from "@/components/auth/id-registration-flow";
 
 export const metadata: Metadata = {
   title: "Coach Registration & Activation | ATHLIX",
-  description: "Activate your ATHLIX coach account using your assigned Coach ID.",
+  description: "Activate your ATHLIX coach account using your Academy Code and assigned Coach ID.",
 };
 
 export default function CoachRegistrationPage() {
@@ -11,10 +11,10 @@ export default function CoachRegistrationPage() {
     <IdRegistrationFlow
       role="COACH"
       title="Coach Registration"
-      subtitle="Activate your account using your official Coach ID."
+      subtitle="Activate your account using your Academy Code and official Coach ID."
       idLabel="Assigned Coach ID"
-      idPlaceholder="e.g. DCOFO001"
-      idHelperText="Enter the 8-character Coach ID assigned by your academy administrator."
+      idPlaceholder="e.g. COFO001"
+      idHelperText="Enter the Coach ID (e.g. COFO001) assigned by your academy administrator."
       redirectPath="/coach"
     />
   );

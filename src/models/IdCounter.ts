@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IIdCounterDocument extends Document {
   academyId: mongoose.Types.ObjectId;
-  userType: "COACH" | "PLAYER";
+  userType: "COACH" | "PLAYER" | "SCOUT";
   sportCode: string;
   seq: number;
   createdAt: Date;
@@ -14,7 +14,7 @@ const IdCounterSchema = new Schema<IIdCounterDocument>(
     academyId: { type: Schema.Types.ObjectId, ref: "Academy", required: true },
     userType: {
       type: String,
-      enum: ["COACH", "PLAYER"],
+      enum: ["COACH", "PLAYER", "SCOUT"],
       required: true,
     },
     sportCode: { type: String, required: true, uppercase: true, trim: true },

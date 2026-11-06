@@ -24,7 +24,7 @@ const CoachSchema = new Schema<ICoachDocument>(
   {
     academyId: { type: Schema.Types.ObjectId, ref: "Academy", required: true },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    coachCode: { type: String, unique: true, sparse: true, uppercase: true, trim: true },
+    coachCode: { type: String, sparse: true, uppercase: true, trim: true },
     phone: { type: String, default: "" },
     sport: { type: String, required: true, trim: true },
     assignedSports: [{ type: String, trim: true }],
@@ -50,6 +50,7 @@ const CoachSchema = new Schema<ICoachDocument>(
 );
 
 CoachSchema.index({ academyId: 1, userId: 1 });
+CoachSchema.index({ academyId: 1, coachCode: 1 }, { unique: true, sparse: true });
 CoachSchema.index({ academyId: 1, sport: 1 });
 CoachSchema.index({ academyId: 1, assignedScoutId: 1 });
 

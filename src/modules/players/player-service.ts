@@ -53,7 +53,7 @@ export async function createPlayer(input: CreatePlayerInput, actorId?: string) {
     throw new NotFoundError("Academy not found");
   }
 
-  // Generate atomic, collision-free Player ID (e.g. DPLFO001)
+  // Generate atomic, collision-free Player ID (e.g. PLFO001)
   const playerCode = await generateAthlixId({
     academyId: input.academyId,
     userType: "PLAYER",
@@ -129,6 +129,7 @@ export async function createPlayer(input: CreatePlayerInput, actorId?: string) {
         playerName: player.name,
         playerId: playerCode,
         academyName: academy.name,
+        academyCode: academy.academyCode || "",
         sport: player.sport,
       });
     } catch (emailErr) {
@@ -170,6 +171,7 @@ export async function resendPlayerNotification(academyId: string, playerId: stri
     playerName: player.name,
     playerId: player.playerCode,
     academyName: academy.name,
+    academyCode: academy.academyCode || "",
     sport: player.sport,
   });
 

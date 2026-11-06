@@ -12,6 +12,9 @@ out/
 build/
 dist/
 
+# TypeScript build info
+*.tsbuildinfo
+
 # Environment files
 .env
 .env.local
@@ -33,3 +36,5 @@ yarn-error.log*
 
 # Graphify & artifacts
 graphify-out/
+
+env.local

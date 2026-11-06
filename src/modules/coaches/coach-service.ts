@@ -30,7 +30,7 @@ export async function createCoach(input: CreateCoachInput, actorId?: string) {
     throw new NotFoundError("Academy not found");
   }
 
-  // Generate atomic, collision-free Coach ID (e.g. DCOFO001)
+  // Generate atomic, collision-free Coach ID (e.g. COFO001)
   const coachCode = await generateAthlixId({
     academyId: input.academyId,
     userType: "COACH",
@@ -92,6 +92,7 @@ export async function createCoach(input: CreateCoachInput, actorId?: string) {
       coachName: user.name,
       coachId: coachCode,
       academyName: academy.name,
+      academyCode: academy.academyCode || "",
       sport: coach.sport,
     });
   } catch (emailErr) {
@@ -136,6 +137,7 @@ export async function resendCoachNotification(academyId: string, coachId: string
     coachName: u.name,
     coachId: coach.coachCode,
     academyName: academy.name,
+    academyCode: academy.academyCode || "",
     sport: coach.sport,
   });
 

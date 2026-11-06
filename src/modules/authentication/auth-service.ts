@@ -1,11 +1,13 @@
-import { User, Coach, Scout, Player } from "@/models";
+import { User, Coach, Scout, Player, Academy } from "@/models";
 import { verifyPassword } from "@/lib/auth/password";
 import { signSessionToken } from "@/lib/auth/jwt";
 import { UnauthorizedError } from "@/lib/errors";
 import { AuthSessionPayload } from "@/types";
 
 export interface LoginInput {
-  email: string;
+  academyCode?: string;
+  email?: string;
+  identifier?: string;
   password: string;
 }
 
@@ -13,28 +15,71 @@ export async function loginUser(input: LoginInput): Promise<{
   token: string;
   payload: AuthSessionPayload;
 }> {
-  const rawIdentifier = (input.email || "").trim();
+  const rawIdentifier = (input.identifier || input.email || "").trim();
   let user = null;
 
   if (rawIdentifier.includes("@")) {
+    // Email-based authentication (Platform Admin, Super Admin, Academy Owner, or Coach/Player using direct email)
     user = await User.findOne({ email: rawIdentifier.toLowerCase() }).select("+passwordHash");
+
+    if (input.academyCode && input.academyCode.trim()) {
+      const cleanAcademyCode = input.academyCode.trim().toUpperCase();
+      const academy = await Academy.findOne({ academyCode: cleanAcademyCode });
+      if (!academy) {
+        throw new UnauthorizedError("Invalid Academy Code or credentials.");
+      }
+      if (user && user.academyId && user.academyId.toString() !== academy._id.toString()) {
+        throw new UnauthorizedError("Invalid credentials for this academy.");
+      }
+    }
   } else {
+    // Individual ID authentication (Coach ID, Player ID, Scout ID)
+    // Strictly requires Academy Code for tenant isolation
+    if (!input.academyCode || !input.academyCode.trim()) {
+      throw new UnauthorizedError("Academy Code is required when logging in with a Coach or Player ID.");
+    }
+
+    const cleanAcademyCode = input.academyCode.trim().toUpperCase();
+    const academy = await Academy.findOne({ academyCode: cleanAcademyCode });
+    if (!academy) {
+      throw new UnauthorizedError("Invalid Academy Code. Please check the code provided by your academy.");
+    }
+
     const cleanId = rawIdentifier.toUpperCase();
-    // 1. Check if ATHLIX Coach ID
-    const coach = await Coach.findOne({ coachCode: cleanId });
+
+    // 1. Check if ATHLIX Coach ID scoped strictly to this academyId
+    const coach = await Coach.findOne({
+      academyId: academy._id,
+      coachCode: cleanId,
+    });
+
     if (coach && coach.userId) {
-      user = await User.findById(coach.userId).select("+passwordHash");
+      user = await User.findOne({ _id: coach.userId, academyId: academy._id }).select("+passwordHash");
     } else {
-      // 2. Check if ATHLIX Player ID
-      const player = await Player.findOne({ playerCode: cleanId });
+      // 2. Check if ATHLIX Player ID scoped strictly to this academyId
+      const player = await Player.findOne({
+        academyId: academy._id,
+        playerCode: cleanId,
+      });
+
       if (player && player.userId) {
-        user = await User.findById(player.userId).select("+passwordHash");
+        user = await User.findOne({ _id: player.userId, academyId: academy._id }).select("+passwordHash");
+      } else {
+        // 3. Check if ATHLIX Scout ID scoped strictly to this academyId
+        const scout = await Scout.findOne({
+          academyId: academy._id,
+          scoutCode: cleanId,
+        });
+
+        if (scout && scout.userId) {
+          user = await User.findOne({ _id: scout.userId, academyId: academy._id }).select("+passwordHash");
+        }
       }
     }
   }
 
   if (!user || !user.passwordHash) {
-    throw new UnauthorizedError("Invalid credentials. Please verify your email / ATHLIX ID and password.");
+    throw new UnauthorizedError("Invalid credentials. Please verify your Academy Code, ID and password.");
   }
 
   if (user.status === "PENDING") {
@@ -49,7 +94,7 @@ export async function loginUser(input: LoginInput): Promise<{
 
   const isPasswordValid = await verifyPassword(input.password, user.passwordHash);
   if (!isPasswordValid) {
-    throw new UnauthorizedError("Invalid credentials. Please verify your email / ATHLIX ID and password.");
+    throw new UnauthorizedError("Invalid credentials. Please verify your credentials and password.");
   }
 
   let coachId: string | undefined = user.coachId?.toString();

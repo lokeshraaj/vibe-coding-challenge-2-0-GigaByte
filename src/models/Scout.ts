@@ -4,6 +4,7 @@ export interface IScoutDocument extends Document {
   academyId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   assignedCoachId: mongoose.Types.ObjectId;
+  scoutCode?: string;
   organization?: string;
   experienceYears?: number;
   status: "ACTIVE" | "INACTIVE";
@@ -16,6 +17,7 @@ const ScoutSchema = new Schema<IScoutDocument>(
     academyId: { type: Schema.Types.ObjectId, ref: "Academy", required: true },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     assignedCoachId: { type: Schema.Types.ObjectId, ref: "Coach", required: true },
+    scoutCode: { type: String, sparse: true, uppercase: true, trim: true },
     organization: { type: String, default: "" },
     experienceYears: { type: Number, default: 0 },
     status: {
@@ -30,6 +32,7 @@ const ScoutSchema = new Schema<IScoutDocument>(
 );
 
 ScoutSchema.index({ academyId: 1, userId: 1 });
+ScoutSchema.index({ academyId: 1, scoutCode: 1 }, { unique: true, sparse: true });
 ScoutSchema.index({ academyId: 1, assignedCoachId: 1 });
 
 export const Scout: Model<IScoutDocument> =

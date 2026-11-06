@@ -8,10 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { signIn } from "next-auth/react";
+import { Building2, IdCard, Lock } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [academyCode, setAcademyCode] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +38,7 @@ function LoginForm() {
             return;
           }
         }
-      } catch (err) {
+      } catch {
         // Not authenticated, stay on page
       } finally {
         setCheckingSession(false);
@@ -61,9 +63,8 @@ function LoginForm() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      // Trigger NextAuth Google OAuth
       await signIn("google", { callbackUrl: "/login" });
-    } catch (err) {
+    } catch {
       toast.error("Google Sign-In could not be initiated.");
       setIsGoogleLoading(false);
     }
@@ -71,8 +72,17 @@ function LoginForm() {
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error("Please enter both email and password");
+    const cleanIdentifier = email.trim();
+    const cleanAcademyCode = academyCode.trim().toUpperCase();
+
+    if (!cleanIdentifier || !password) {
+      toast.error("Please enter both ID/email and password");
+      return;
+    }
+
+    // If identifier is not an email, Academy Code is strictly required
+    if (!cleanIdentifier.includes("@") && !cleanAcademyCode) {
+      toast.error("Academy Code is required for Coach and Player ID sign-in");
       return;
     }
 
@@ -81,7 +91,11 @@ function LoginForm() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          academyCode: cleanAcademyCode || undefined,
+          email: cleanIdentifier,
+          password,
+        }),
       });
 
       const data = await res.json();
@@ -110,7 +124,8 @@ function LoginForm() {
   };
 
   // Quick fill helper for convenience during demos & review
-  const handleDemoFill = (demoEmail: string, demoPass: string) => {
+  const handleDemoFill = (demoEmail: string, demoPass: string, demoAcadCode: string = "") => {
+    setAcademyCode(demoAcadCode);
     setEmail(demoEmail);
     setPassword(demoPass);
     toast.info(`Filled credentials for ${demoEmail}`);
@@ -193,31 +208,71 @@ function LoginForm() {
           <div className="relative flex items-center justify-center">
             <div className="w-full border-t border-[#DCE1E3]" />
             <span className="absolute bg-white px-3 text-[11px] font-semibold uppercase tracking-wider text-[#8B969E]">
-              Or continue with email
+              Or continue with credentials
             </span>
           </div>
 
-          {/* Email / Password Form */}
+          {/* Academy Code + Individual ID / Email + Password Form */}
           <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <Input
-              id="email"
-              label="Email Address or ATHLIX ID"
-              type="text"
-              placeholder="e.g. coach@apex.com or DCOFO001"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            {/* Field 1: Academy Code */}
+            <div className="space-y-1">
+              <label
+                htmlFor="academyCode"
+                className="text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-1.5"
+              >
+                <Building2 className="h-3.5 w-3.5" />
+                <span>Academy Code</span>
+              </label>
+              <Input
+                id="academyCode"
+                type="text"
+                placeholder="e.g. BI0001 or JH0001"
+                value={academyCode}
+                onChange={(e) => setAcademyCode(e.target.value.toUpperCase())}
+                className="font-mono uppercase"
+              />
+              <p className="text-[11px] text-[#8B969E]">
+                Required for Coach and Player ID sign-in. (Leave blank for Platform Admin / Owner email logins)
+              </p>
+            </div>
 
-            <Input
-              id="password"
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            {/* Field 2: Individual ID or Email */}
+            <div className="space-y-1">
+              <label
+                htmlFor="email"
+                className="text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-1.5"
+              >
+                <IdCard className="h-3.5 w-3.5" />
+                <span>Coach ID / Player ID or Email</span>
+              </label>
+              <Input
+                id="email"
+                type="text"
+                placeholder="e.g. COFO001, PLFO001, or owner@apex.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            {/* Field 3: Password */}
+            <div className="space-y-1">
+              <label
+                htmlFor="password"
+                className="text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-1.5"
+              >
+                <Lock className="h-3.5 w-3.5" />
+                <span>Password</span>
+              </label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
             <Button
               type="submit"
@@ -241,14 +296,14 @@ function LoginForm() {
                 className="p-2.5 rounded-lg bg-[#FAF9F5] border border-[#DCE1E3] text-center hover:border-[#101820] hover:bg-[#F4F3EE] transition-colors"
               >
                 <div className="font-bold text-[#101820]">Register Coach</div>
-                <div className="text-[10px] text-[#8B969E]">Using Coach ID</div>
+                <div className="text-[10px] text-[#8B969E]">With Academy Code & ID</div>
               </Link>
               <Link
                 href="/register/player"
                 className="p-2.5 rounded-lg bg-[#FAF9F5] border border-[#DCE1E3] text-center hover:border-[#101820] hover:bg-[#F4F3EE] transition-colors"
               >
                 <div className="font-bold text-[#101820]">Register Athlete</div>
-                <div className="text-[10px] text-[#8B969E]">Using Player ID</div>
+                <div className="text-[10px] text-[#8B969E]">With Academy Code & ID</div>
               </Link>
             </div>
             <div className="text-center pt-1">
@@ -269,7 +324,7 @@ function LoginForm() {
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => handleDemoFill("owner@apex.com", "ApexOwner2026!")}
+                onClick={() => handleDemoFill("owner@apex.com", "ApexOwner2026!", "GR0001")}
                 className="p-2.5 rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-left hover:border-[#101820] transition-colors"
               >
                 <div className="font-bold text-[#101820]">Academy Owner</div>
@@ -278,16 +333,16 @@ function LoginForm() {
 
               <button
                 type="button"
-                onClick={() => handleDemoFill("coach.marcus@apex.com", "CoachMarcus2026!")}
+                onClick={() => handleDemoFill("COFO001", "CoachMarcus2026!", "GR0001")}
                 className="p-2.5 rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-left hover:border-[#101820] transition-colors"
               >
-                <div className="font-bold text-[#101820]">Head Coach</div>
-                <div className="text-[10px] text-[#8B969E] truncate">coach.marcus@apex.com</div>
+                <div className="font-bold text-[#101820]">Head Coach (ID)</div>
+                <div className="text-[10px] text-[#8B969E] truncate">COFO001 [GR0001]</div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleDemoFill("scout.elena@apex.com", "ScoutElena2026!")}
+                onClick={() => handleDemoFill("scout.elena@apex.com", "ScoutElena2026!", "GR0001")}
                 className="p-2.5 rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-left hover:border-[#101820] transition-colors"
               >
                 <div className="font-bold text-[#101820]">Assigned Scout</div>
@@ -296,11 +351,21 @@ function LoginForm() {
 
               <button
                 type="button"
-                onClick={() => handleDemoFill("player.leo@apex.com", "PlayerLeo2026!")}
+                onClick={() => handleDemoFill("PLFO001", "PlayerLeo2026!", "GR0001")}
                 className="p-2.5 rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-left hover:border-[#101820] transition-colors"
               >
-                <div className="font-bold text-[#101820]">Player Account</div>
-                <div className="text-[10px] text-[#8B969E] truncate">player.leo@apex.com</div>
+                <div className="font-bold text-[#101820]">Player (ID)</div>
+                <div className="text-[10px] text-[#8B969E] truncate">PLFO001 [GR0001]</div>
+              </button>
+            </div>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => handleDemoFill("superadmin@athlix.com", "AthlixAdmin2026!", "")}
+                className="w-full p-2 rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] text-left hover:border-[#101820] transition-colors text-xs"
+              >
+                <div className="font-bold text-[#101820]">Platform Super Admin</div>
+                <div className="text-[10px] text-[#8B969E]">superadmin@athlix.com (No Academy Code required)</div>
               </button>
             </div>
           </div>

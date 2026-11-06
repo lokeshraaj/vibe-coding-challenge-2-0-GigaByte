@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Scout, Coach, User } from "@/models";
 import { hashPassword } from "@/lib/auth/password";
+import { generateAthlixId } from "@/lib/id-generator";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 
 export interface CreateScoutInput {
@@ -30,6 +31,13 @@ export async function createScout(input: CreateScoutInput) {
     throw new NotFoundError("Assigned coach does not exist in this academy.");
   }
 
+  // Generate atomic, collision-free Scout ID (e.g. SCFO001)
+  const scoutCode = await generateAthlixId({
+    academyId: input.academyId,
+    userType: "SCOUT",
+    sport: coach.sport,
+  });
+
   const defaultPassword = input.password || "ScoutAthlix2026!";
   const hashedPassword = await hashPassword(defaultPassword);
 
@@ -52,6 +60,7 @@ export async function createScout(input: CreateScoutInput) {
     academyId: new mongoose.Types.ObjectId(input.academyId),
     userId: userId,
     assignedCoachId: coach._id,
+    scoutCode: scoutCode,
     organization: input.organization || "",
     experienceYears: input.experienceYears || 0,
     status: "ACTIVE",
@@ -64,6 +73,7 @@ export async function createScout(input: CreateScoutInput) {
   return {
     id: scout._id.toString(),
     userId: user._id.toString(),
+    scoutCode: scout.scoutCode,
     name: user.name,
     email: user.email,
     assignedCoachId: coach._id.toString(),
@@ -144,6 +154,7 @@ export async function listScoutsByAcademy(academyId: string) {
       return {
         id: s._id.toString(),
         userId: s.userId?.toString(),
+        scoutCode: s.scoutCode || "",
         name: u?.name || "Unknown",
         email: u?.email || "",
         organization: s.organization,

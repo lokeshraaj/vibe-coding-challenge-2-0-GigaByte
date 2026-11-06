@@ -13,6 +13,7 @@ export async function POST(req: Request) {
     const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "";
 
     const result = await resendRegistrationOtp({
+      academyCode: validatedData.academyCode,
       athlixId: validatedData.athlixId,
       ipAddress: clientIp,
     });

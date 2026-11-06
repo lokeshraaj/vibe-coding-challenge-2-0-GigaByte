@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { SignJWT, jwtVerify } from "jose";
-import { Coach, Player, User, OtpChallenge, AuditLog } from "@/models";
+import { Coach, Player, User, OtpChallenge, AuditLog, Academy } from "@/models";
 import { generateSecureOtp, hashOtp, verifyOtp, maskEmail } from "@/lib/auth/otp";
 import { sendOtpEmail } from "@/lib/email/brevo";
 import { hashPassword } from "@/lib/auth/password";
@@ -22,6 +22,8 @@ export interface ActivationPayload {
   email: string;
   role: "COACH" | "PLAYER";
   challengeId: string;
+  academyId?: string;
+  academyCode?: string;
 }
 
 export async function signActivationToken(payload: ActivationPayload): Promise<string> {
@@ -42,21 +44,47 @@ export async function verifyActivationToken(token: string): Promise<ActivationPa
 }
 
 /**
- * Step 1 & 2: Verify ATHLIX ID and dispatch Brevo OTP email.
+ * Step 1 & 2: Verify Academy Code & ATHLIX ID, and dispatch Brevo OTP email.
  */
 export async function initiateIdRegistration(params: {
+  academyCode?: string;
   athlixId: string;
   role: "COACH" | "PLAYER";
   ipAddress?: string;
 }) {
   const cleanId = params.athlixId.trim().toUpperCase();
+  let academy = null;
+
+  if (params.academyCode && params.academyCode.trim()) {
+    const cleanAcademyCode = params.academyCode.trim().toUpperCase();
+    academy = await Academy.findOne({ academyCode: cleanAcademyCode });
+    if (!academy) {
+      throw new NotFoundError("Invalid Academy Code. Please check the code provided by your academy.");
+    }
+  }
+
   let recipientEmail = "";
   let recipientName = "";
+  let resolvedAcademyId: mongoose.Types.ObjectId | null = academy ? (academy._id as mongoose.Types.ObjectId) : null;
 
   if (params.role === "COACH") {
-    const coach = await Coach.findOne({ coachCode: cleanId }).populate("userId", "name email status");
+    const query: Record<string, unknown> = { coachCode: cleanId };
+    if (resolvedAcademyId) {
+      query.academyId = resolvedAcademyId;
+    }
+
+    const coach = await Coach.findOne(query).populate("userId", "name email status");
     if (!coach) {
-      throw new NotFoundError("Invalid Coach ID. Please check the ID provided by your academy.");
+      throw new NotFoundError(
+        resolvedAcademyId
+          ? "Invalid Coach ID for this academy. Please check the ID provided by your academy administrator."
+          : "Invalid Coach ID. Please check the ID provided by your academy."
+      );
+    }
+
+    if (!resolvedAcademyId && coach.academyId) {
+      resolvedAcademyId = coach.academyId;
+      academy = await Academy.findById(resolvedAcademyId);
     }
 
     if (coach.accountStatus === "ACTIVE") {
@@ -76,9 +104,23 @@ export async function initiateIdRegistration(params: {
     recipientName = u.name;
   } else {
     // Player lookup
-    const player = await Player.findOne({ playerCode: cleanId });
+    const query: Record<string, unknown> = { playerCode: cleanId };
+    if (resolvedAcademyId) {
+      query.academyId = resolvedAcademyId;
+    }
+
+    const player = await Player.findOne(query);
     if (!player) {
-      throw new NotFoundError("Invalid Player ID. Please check the ID provided by your academy.");
+      throw new NotFoundError(
+        resolvedAcademyId
+          ? "Invalid Player ID for this academy. Please check the ID provided by your coach."
+          : "Invalid Player ID. Please check the ID provided by your academy."
+      );
+    }
+
+    if (!resolvedAcademyId && player.academyId) {
+      resolvedAcademyId = player.academyId;
+      academy = await Academy.findById(resolvedAcademyId);
     }
 
     if (player.accountStatus === "ACTIVE") {
@@ -147,6 +189,7 @@ export async function initiateIdRegistration(params: {
     otpCode: rawOtp,
     role: params.role,
     athlixId: cleanId,
+    academyCode: academy?.academyCode,
   });
 
   // Verify Brevo API acceptance: Never show a false success message if email delivery fails
@@ -160,6 +203,8 @@ export async function initiateIdRegistration(params: {
   return {
     success: true,
     athlixId: cleanId,
+    academyCode: academy?.academyCode || "",
+    academyName: academy?.name || "",
     role: params.role,
     maskedEmail: maskEmail(recipientEmail),
     expiresAt: challenge.expiresAt,
@@ -172,6 +217,7 @@ export async function initiateIdRegistration(params: {
 export async function verifyRegistrationOtp(params: {
   athlixId: string;
   otp: string;
+  academyCode?: string;
 }) {
   const cleanId = params.athlixId.trim().toUpperCase();
 
@@ -203,12 +249,25 @@ export async function verifyRegistrationOtp(params: {
     throw new UnauthorizedError(`Incorrect verification code. ${remaining} attempt(s) remaining.`);
   }
 
+  // Resolve academy context if available
+  let academyId: string | undefined = undefined;
+  let academyCode: string | undefined = params.academyCode?.trim().toUpperCase();
+
+  if (academyCode) {
+    const acad = await Academy.findOne({ academyCode });
+    if (acad) {
+      academyId = acad._id.toString();
+    }
+  }
+
   // Issue activation token valid for 10 minutes to proceed to Set Password screen
   const activationToken = await signActivationToken({
     athlixId: cleanId,
     email: challenge.email,
     role: challenge.role,
     challengeId: challenge._id.toString(),
+    academyId,
+    academyCode,
   });
 
   return {
@@ -222,6 +281,7 @@ export async function verifyRegistrationOtp(params: {
  */
 export async function resendRegistrationOtp(params: {
   athlixId: string;
+  academyCode?: string;
   ipAddress?: string;
 }) {
   const cleanId = params.athlixId.trim().toUpperCase();
@@ -233,6 +293,7 @@ export async function resendRegistrationOtp(params: {
 
   return initiateIdRegistration({
     athlixId: cleanId,
+    academyCode: params.academyCode,
     role: latestChallenge.role,
     ipAddress: params.ipAddress,
   });
@@ -259,7 +320,11 @@ export async function completeAccountActivation(params: {
   let academyId = "";
 
   if (payload.role === "COACH") {
-    const coach = await Coach.findOne({ coachCode: payload.athlixId });
+    const coachQuery: Record<string, unknown> = { coachCode: payload.athlixId };
+    if (payload.academyId) {
+      coachQuery.academyId = new mongoose.Types.ObjectId(payload.academyId);
+    }
+    const coach = await Coach.findOne(coachQuery);
     if (!coach) throw new NotFoundError("Coach record not found");
 
     userIdToActivate = coach.userId;
@@ -271,7 +336,11 @@ export async function completeAccountActivation(params: {
     academyId = coach.academyId.toString();
   } else {
     // Player
-    const player = await Player.findOne({ playerCode: payload.athlixId });
+    const playerQuery: Record<string, unknown> = { playerCode: payload.athlixId };
+    if (payload.academyId) {
+      playerQuery.academyId = new mongoose.Types.ObjectId(payload.academyId);
+    }
+    const player = await Player.findOne(playerQuery);
     if (!player) throw new NotFoundError("Athlete record not found");
 
     player.accountStatus = "ACTIVE";

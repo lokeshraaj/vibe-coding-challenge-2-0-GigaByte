@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Clock,
   IdCard,
+  Building2,
 } from "lucide-react";
 
 interface IdRegistrationFlowProps {
@@ -44,6 +45,9 @@ export function IdRegistrationFlow({
 
   // Multi-step state
   const [step, setStep] = useState<RegistrationStep>("ENTER_ID");
+  const [academyCode, setAcademyCode] = useState("");
+  const [verifiedAcademyName, setVerifiedAcademyName] = useState<string | null>(null);
+  const [isVerifyingAcademy, setIsVerifyingAcademy] = useState(false);
   const [athlixId, setAthlixId] = useState("");
   const [maskedEmail, setMaskedEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -67,10 +71,52 @@ export function IdRegistrationFlow({
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  // Step 1: Submit ATHLIX ID
+  // Handle validating Academy Code
+  const handleValidateAcademyCode = async (codeToVerify?: string) => {
+    const code = (codeToVerify || academyCode).trim().toUpperCase();
+    if (!code || code.length < 4) {
+      setVerifiedAcademyName(null);
+      return;
+    }
+
+    setIsVerifyingAcademy(true);
+    try {
+      const res = await fetch("/api/auth/register/verify-academy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ academyCode: code }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setVerifiedAcademyName(null);
+        toast.error(data.error || "Invalid Academy Code. Please check the code provided by your academy.");
+        return false;
+      }
+
+      setVerifiedAcademyName(data.data.academyName);
+      toast.success(`Academy Verified: ${data.data.academyName}`);
+      return true;
+    } catch {
+      setVerifiedAcademyName(null);
+      toast.error("Failed to verify Academy Code. Please check your network.");
+      return false;
+    } finally {
+      setIsVerifyingAcademy(false);
+    }
+  };
+
+  // Step 1: Submit Academy Code + ATHLIX ID
   const handleVerifyId = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanAcademyCode = academyCode.trim().toUpperCase();
     const cleanId = athlixId.trim().toUpperCase();
+
+    if (!cleanAcademyCode) {
+      toast.error("Please enter your Academy Code (e.g. BI0001, JH0001)");
+      return;
+    }
+
     if (!cleanId) {
       toast.error(`Please enter your ${idLabel}`);
       return;
@@ -81,7 +127,11 @@ export function IdRegistrationFlow({
       const res = await fetch("/api/auth/register/verify-id", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ athlixId: cleanId, role }),
+        body: JSON.stringify({
+          academyCode: cleanAcademyCode,
+          athlixId: cleanId,
+          role,
+        }),
       });
 
       const data = await res.json();
@@ -89,8 +139,12 @@ export function IdRegistrationFlow({
         throw new Error(data.error || "Failed to verify ID");
       }
 
+      if (data.academyName) {
+        setVerifiedAcademyName(data.academyName);
+      }
       setMaskedEmail(data.maskedEmail);
       setAthlixId(cleanId);
+      setAcademyCode(cleanAcademyCode);
       setStep("VERIFY_OTP");
       setResendCooldown(60);
       toast.success(`Verification code dispatched to ${data.maskedEmail}`);
@@ -114,7 +168,11 @@ export function IdRegistrationFlow({
       const res = await fetch("/api/auth/register/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ athlixId, otp }),
+        body: JSON.stringify({
+          academyCode: academyCode.trim().toUpperCase(),
+          athlixId,
+          otp,
+        }),
       });
 
       const data = await res.json();
@@ -140,7 +198,10 @@ export function IdRegistrationFlow({
       const res = await fetch("/api/auth/register/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ athlixId }),
+        body: JSON.stringify({
+          academyCode: academyCode.trim().toUpperCase(),
+          athlixId,
+        }),
       });
 
       const data = await res.json();
@@ -251,9 +312,75 @@ export function IdRegistrationFlow({
         </CardHeader>
 
         <CardContent className="pt-6">
-          {/* STEP 1: ENTER ID */}
+          {/* STEP 1: ENTER ACADEMY CODE & ID */}
           {step === "ENTER_ID" && (
             <form onSubmit={handleVerifyId} className="space-y-5">
+              {/* Academy Code Input with Live Validation Feedback */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="academyCode"
+                    className="text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-1.5"
+                  >
+                    <Building2 className="h-4 w-4" />
+                    <span>Academy Code *</span>
+                  </label>
+                  {isVerifyingAcademy && (
+                    <span className="text-[11px] font-semibold text-[#8B969E]">Checking...</span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    id="academyCode"
+                    type="text"
+                    placeholder="e.g. BI0001 or JH0001"
+                    value={academyCode}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setAcademyCode(val);
+                      if (val.length >= 6) {
+                        handleValidateAcademyCode(val);
+                      } else {
+                        setVerifiedAcademyName(null);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (academyCode.length >= 4) {
+                        handleValidateAcademyCode();
+                      }
+                    }}
+                    className="font-mono text-base font-bold uppercase tracking-wider"
+                    required
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleValidateAcademyCode()}
+                    disabled={isVerifyingAcademy || academyCode.length < 4}
+                    className="shrink-0 text-xs font-bold uppercase border-[#DCE1E3]"
+                  >
+                    Verify
+                  </Button>
+                </div>
+
+                {/* Verified Academy Confirmation Banner */}
+                {verifiedAcademyName ? (
+                  <div className="rounded-md bg-[#EDFBD8] border border-[#C6F432] p-2.5 flex items-center gap-2 text-xs text-[#1E4620]">
+                    <CheckCircle2 className="h-4 w-4 text-[#101820] shrink-0" />
+                    <span>
+                      Confirmed: <strong>{verifiedAcademyName}</strong>
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-[12px] text-[#8B969E]">
+                    Enter the 6-character Academy Code assigned to your sports academy.
+                  </p>
+                )}
+              </div>
+
+              {/* Individual ATHLIX ID Input */}
               <div className="space-y-2">
                 <label
                   htmlFor="athlixId"
@@ -270,7 +397,6 @@ export function IdRegistrationFlow({
                   onChange={(e) => setAthlixId(e.target.value.toUpperCase())}
                   className="font-mono text-base font-bold uppercase tracking-wider"
                   required
-                  autoFocus
                 />
                 <p className="text-[12px] text-[#8B969E]">{idHelperText}</p>
               </div>
@@ -303,6 +429,11 @@ export function IdRegistrationFlow({
                   <ShieldCheck className="h-4 w-4 text-[#101820]" />
                   <span>ATHLIX Security Challenge</span>
                 </div>
+                {verifiedAcademyName && (
+                  <div>
+                    Academy: <strong className="text-[#101820]">{verifiedAcademyName}</strong> ({academyCode})
+                  </div>
+                )}
                 <div>
                   A 6-digit one-time passcode was sent to:{" "}
                   <strong className="text-[#101820] font-mono">{maskedEmail}</strong>
@@ -348,25 +479,22 @@ export function IdRegistrationFlow({
                 <button
                   type="button"
                   onClick={() => setStep("ENTER_ID")}
-                  className="text-[#8B969E] hover:text-[#101820] font-semibold"
+                  className="text-[#8B969E] hover:text-[#101820] font-medium"
                 >
-                  Change ID
+                  &larr; Re-enter Academy Code & ID
                 </button>
-
                 <button
                   type="button"
                   onClick={handleResendOtp}
                   disabled={resendCooldown > 0 || isLoading}
-                  className={`flex items-center gap-1 font-bold ${
+                  className={`font-bold flex items-center gap-1 ${
                     resendCooldown > 0
                       ? "text-[#8B969E] cursor-not-allowed"
                       : "text-[#101820] hover:underline"
                   }`}
                 >
                   <RefreshCw className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
-                  <span>
-                    {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend Code"}
-                  </span>
+                  {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : "Resend Code"}
                 </button>
               </div>
             </form>
@@ -374,72 +502,63 @@ export function IdRegistrationFlow({
 
           {/* STEP 3: SET PASSWORD */}
           {step === "SET_PASSWORD" && (
-            <form onSubmit={handleSetPassword} className="space-y-4">
-              <div className="rounded-lg bg-[#F4F3EE] border border-[#DCE1E3] p-3 text-xs text-[#202A32] flex items-center gap-2">
-                <KeyRound className="h-4 w-4 shrink-0 text-[#101820]" />
-                <span>
-                  Configure a password for your account associated with <strong>{athlixId}</strong>.
-                </span>
+            <form onSubmit={handleSetPassword} className="space-y-5">
+              <div className="rounded-lg bg-[#FAF9F5] border border-[#DCE1E3] p-3 text-xs text-[#202A32] space-y-1">
+                <div className="font-bold text-[#101820] flex items-center gap-1.5">
+                  <KeyRound className="h-4 w-4 text-[#101820]" />
+                  <span>Configure Account Password</span>
+                </div>
+                <p className="text-[#8B969E]">
+                  Your email has been verified. Create a strong password to complete profile activation.
+                </p>
               </div>
 
-              <div className="space-y-1.5 relative">
-                <label
-                  htmlFor="password"
-                  className="text-xs font-bold uppercase tracking-wider text-[#101820]"
-                >
-                  Create Password *
-                </label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Min 8 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B969E] hover:text-[#101820]"
+              <div className="space-y-4">
+                <div className="space-y-1.5 relative">
+                  <label
+                    htmlFor="password"
+                    className="text-xs font-bold uppercase tracking-wider text-[#101820]"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                    Password *
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="At least 8 characters"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B969E] hover:text-[#101820]"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[#8B969E]">
+                    Must contain 8+ characters, uppercase, lowercase, and a number.
+                  </p>
                 </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="confirmPassword"
-                  className="text-xs font-bold uppercase tracking-wider text-[#101820]"
-                >
-                  Confirm Password *
-                </label>
-                <Input
-                  id="confirmPassword"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Repeat your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
-
-              {/* Password checklist */}
-              <div className="p-3 rounded-lg border border-[#DCE1E3] bg-[#FAF9F5] text-[11px] space-y-1">
-                <div className="font-bold text-[#101820]">Password requirements:</div>
-                <div className={password.length >= 8 ? "text-emerald-600 font-semibold" : "text-[#8B969E]"}>
-                  • Minimum 8 characters
-                </div>
-                <div className={/[A-Z]/.test(password) ? "text-emerald-600 font-semibold" : "text-[#8B969E]"}>
-                  • At least one uppercase letter (A-Z)
-                </div>
-                <div className={/[a-z]/.test(password) ? "text-emerald-600 font-semibold" : "text-[#8B969E]"}>
-                  • At least one lowercase letter (a-z)
-                </div>
-                <div className={/[0-9]/.test(password) ? "text-emerald-600 font-semibold" : "text-[#8B969E]"}>
-                  • At least one number (0-9)
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="confirmPassword"
+                    className="text-xs font-bold uppercase tracking-wider text-[#101820]"
+                  >
+                    Confirm Password *
+                  </label>
+                  <Input
+                    id="confirmPassword"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Repeat password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
 
@@ -450,7 +569,7 @@ export function IdRegistrationFlow({
                 className="w-full font-bold shadow-sm"
                 isLoading={isLoading}
               >
-                Activate Account & Sign In
+                Set Password & Activate Profile
               </Button>
             </form>
           )}
@@ -458,15 +577,13 @@ export function IdRegistrationFlow({
           {/* STEP 4: SUCCESS */}
           {step === "SUCCESS" && (
             <div className="py-6 text-center space-y-4">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#C6F432] text-[#101820]">
-                <CheckCircle2 className="h-8 w-8" />
+              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#EDFBD8] border-2 border-[#C6F432]">
+                <CheckCircle2 className="h-8 w-8 text-[#101820]" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-xl font-extrabold uppercase text-[#101820]">
-                  Welcome to ATHLIX
-                </h3>
-                <p className="text-xs text-[#8B969E]">
-                  Your credentials have been authenticated. Redirecting to your dashboard...
+                <h3 className="text-xl font-black text-[#101820]">Account Ready</h3>
+                <p className="text-sm text-[#8B969E]">
+                  Your credentials have been securely stored. Redirecting to your dashboard...
                 </p>
               </div>
               <div className="pt-2 flex justify-center">

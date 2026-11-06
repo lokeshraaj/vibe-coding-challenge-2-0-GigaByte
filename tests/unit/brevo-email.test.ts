@@ -3,6 +3,7 @@ import {
   sendBrevoEmail,
   sendCoachNotificationEmail,
   sendPlayerNotificationEmail,
+  sendAcademyRegistrationEmail,
   sendOtpEmail,
 } from "@/lib/email/brevo";
 import { generateSecureOtp, hashOtp, verifyOtp } from "@/lib/auth/otp";
@@ -24,8 +25,42 @@ describe("Brevo Email Service & OTP Verification Tests", () => {
     process.env = originalEnv;
   });
 
-  describe("1. Coach Notification Email via Brevo", () => {
-    it("dispatches coach notification containing Coach ID without OTP or sign-up link", async () => {
+  describe("1. Academy Welcome Email via Brevo", () => {
+    it("dispatches academy registration email featuring Academy Code and state", async () => {
+      let capturedRequest: any = null;
+
+      global.fetch = vi.fn().mockImplementation(async (url: string, options: any) => {
+        capturedRequest = { url, ...options, body: JSON.parse(options.body) };
+        return {
+          ok: true,
+          status: 201,
+          json: async () => ({ messageId: "msg-academy-001" }),
+        };
+      });
+
+      const result = await sendAcademyRegistrationEmail({
+        toEmail: "owner@jharkhandacademy.com",
+        ownerName: "Rajesh Kumar",
+        academyName: "Ranchi Super Sports",
+        academyCode: "JH0001",
+        city: "Ranchi",
+        state: "Jharkhand",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.messageId).toBe("msg-academy-001");
+      expect(capturedRequest.url).toBe("https://api.brevo.com/v3/smtp/email");
+      expect(capturedRequest.headers["api-key"]).toBe("test-brevo-api-key");
+      expect(capturedRequest.body.to[0].email).toBe("owner@jharkhandacademy.com");
+      expect(capturedRequest.body.subject).toContain("JH0001");
+      expect(capturedRequest.body.htmlContent).toContain("JH0001");
+      expect(capturedRequest.body.htmlContent).toContain("Ranchi Super Sports");
+      expect(capturedRequest.body.htmlContent).toContain("Jharkhand");
+    });
+  });
+
+  describe("2. Coach Notification Email via Brevo", () => {
+    it("dispatches coach notification containing Academy Code and Coach ID without OTP or sign-up link", async () => {
       let capturedRequest: any = null;
 
       global.fetch = vi.fn().mockImplementation(async (url: string, options: any) => {
@@ -40,8 +75,9 @@ describe("Brevo Email Service & OTP Verification Tests", () => {
       const result = await sendCoachNotificationEmail({
         toEmail: "coach@academy.com",
         coachName: "Alex Ferguson",
-        coachId: "DCOFO001",
+        coachId: "COFO001",
         academyName: "Apex Elite Sports",
+        academyCode: "JH0001",
         sport: "Football",
       });
 
@@ -52,8 +88,9 @@ describe("Brevo Email Service & OTP Verification Tests", () => {
       expect(capturedRequest.body.sender.email).toBe("aalex04820834@gmail.com");
       expect(capturedRequest.body.sender.name).toBe("ATHLIX");
       expect(capturedRequest.body.to[0].email).toBe("coach@academy.com");
-      expect(capturedRequest.body.subject).toContain("DCOFO001");
-      expect(capturedRequest.body.htmlContent).toContain("DCOFO001");
+      expect(capturedRequest.body.subject).toContain("COFO001");
+      expect(capturedRequest.body.htmlContent).toContain("COFO001");
+      expect(capturedRequest.body.htmlContent).toContain("JH0001");
       expect(capturedRequest.body.htmlContent).toContain("Apex Elite Sports");
       expect(capturedRequest.body.htmlContent).toContain("Football");
       // Security rule: NO direct sign-up link or OTP in notification
@@ -62,8 +99,8 @@ describe("Brevo Email Service & OTP Verification Tests", () => {
     });
   });
 
-  describe("2. Player Notification Email via Brevo", () => {
-    it("dispatches player notification containing Player ID without OTP or registration link", async () => {
+  describe("3. Player Notification Email via Brevo", () => {
+    it("dispatches player notification containing Academy Code and Player ID without OTP or registration link", async () => {
       let capturedRequest: any = null;
 
       global.fetch = vi.fn().mockImplementation(async (url: string, options: any) => {
@@ -78,8 +115,9 @@ describe("Brevo Email Service & OTP Verification Tests", () => {
       const result = await sendPlayerNotificationEmail({
         toEmail: "player@academy.com",
         playerName: "Marcus Rashford",
-        playerId: "DPLFO001",
+        playerId: "PLFO001",
         academyName: "Apex Elite Sports",
+        academyCode: "JH0001",
         sport: "Football",
       });
 
@@ -88,14 +126,15 @@ describe("Brevo Email Service & OTP Verification Tests", () => {
       expect(capturedRequest.url).toBe("https://api.brevo.com/v3/smtp/email");
       expect(capturedRequest.body.sender.email).toBe("aalex04820834@gmail.com");
       expect(capturedRequest.body.to[0].email).toBe("player@academy.com");
-      expect(capturedRequest.body.subject).toContain("DPLFO001");
-      expect(capturedRequest.body.htmlContent).toContain("DPLFO001");
+      expect(capturedRequest.body.subject).toContain("PLFO001");
+      expect(capturedRequest.body.htmlContent).toContain("PLFO001");
+      expect(capturedRequest.body.htmlContent).toContain("JH0001");
       expect(capturedRequest.body.htmlContent).toContain("Apex Elite Sports");
       expect(capturedRequest.body.htmlContent).not.toContain("token=");
     });
   });
 
-  describe("3. Coach & Player OTP Email via Brevo", () => {
+  describe("4. Coach & Player OTP Email via Brevo", () => {
     it("sends 6-digit OTP email with 5-minute expiry notice for Coach registration", async () => {
       let capturedRequest: any = null;
 
@@ -113,7 +152,8 @@ describe("Brevo Email Service & OTP Verification Tests", () => {
         recipientName: "Alex Ferguson",
         otpCode: "482910",
         role: "COACH",
-        athlixId: "DCOFO001",
+        athlixId: "COFO001",
+        academyCode: "JH0001",
       });
 
       expect(result.success).toBe(true);
@@ -122,7 +162,8 @@ describe("Brevo Email Service & OTP Verification Tests", () => {
       expect(capturedRequest.body.to[0].email).toBe("coach@academy.com");
       expect(capturedRequest.body.subject).toBe("482910 is your ATHLIX verification code");
       expect(capturedRequest.body.htmlContent).toContain("482910");
-      expect(capturedRequest.body.htmlContent).toContain("DCOFO001");
+      expect(capturedRequest.body.htmlContent).toContain("COFO001");
+      expect(capturedRequest.body.htmlContent).toContain("JH0001");
       expect(capturedRequest.body.htmlContent).toContain("5 minutes");
       expect(capturedRequest.body.htmlContent).toContain("Coach");
     });
@@ -144,18 +185,20 @@ describe("Brevo Email Service & OTP Verification Tests", () => {
         recipientName: "Marcus Rashford",
         otpCode: "918234",
         role: "PLAYER",
-        athlixId: "DPLFO001",
+        athlixId: "PLFO001",
+        academyCode: "JH0001",
       });
 
       expect(result.success).toBe(true);
       expect(capturedRequest.body.subject).toBe("918234 is your ATHLIX verification code");
       expect(capturedRequest.body.htmlContent).toContain("918234");
-      expect(capturedRequest.body.htmlContent).toContain("DPLFO001");
+      expect(capturedRequest.body.htmlContent).toContain("PLFO001");
+      expect(capturedRequest.body.htmlContent).toContain("JH0001");
       expect(capturedRequest.body.htmlContent).toContain("Player");
     });
   });
 
-  describe("4. Brevo API Error Handling", () => {
+  describe("5. Brevo API Error Handling", () => {
     it("handles Brevo API HTTP 401 / 400 error cleanly without throwing unhandled exceptions", async () => {
       global.fetch = vi.fn().mockImplementation(async () => {
         return {
@@ -194,19 +237,15 @@ describe("Brevo Email Service & OTP Verification Tests", () => {
     });
   });
 
-  describe("5. OTP Security, Hashing & Attempt Invariants", () => {
+  describe("6. OTP Security, Hashing & Attempt Invariants", () => {
     it("never stores plain OTP and verifies valid vs invalid candidate OTPs", () => {
       const plainOtp = generateSecureOtp();
       const hash = hashOtp(plainOtp);
 
-      // Verify hash is not equal to plain OTP
       expect(hash).not.toBe(plainOtp);
       expect(hash).toHaveLength(64);
 
-      // Valid OTP
       expect(verifyOtp(plainOtp, hash)).toBe(true);
-
-      // Wrong OTPs
       expect(verifyOtp("000000", hash)).toBe(false);
       expect(verifyOtp("123456", hash)).toBe(false);
       expect(verifyOtp("", hash)).toBe(false);
@@ -267,12 +306,10 @@ describe("Brevo Email Service & OTP Verification Tests", () => {
         expect(res.locked).toBe(false);
       }
 
-      // 5th failed attempt locks
       const fifth = attemptVerify("wrong", "123456");
       expect(fifth.success).toBe(false);
       expect(fifth.locked).toBe(true);
 
-      // Subsequent attempt blocked
       const sixth = attemptVerify("123456", "123456");
       expect(sixth.locked).toBe(true);
       expect(sixth.success).toBe(false);

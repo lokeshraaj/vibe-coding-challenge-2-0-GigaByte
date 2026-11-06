@@ -27,10 +27,20 @@ export const academyRegisterSchema = z.object({
     .regex(/[0-9]/, "Password must contain at least one number"),
 });
 
-export const loginSchema = z.object({
-  email: z.string().min(1, "Email or ATHLIX ID is required"),
-  password: z.string().min(1, "Password is required"),
-});
+export const loginSchema = z
+  .object({
+    academyCode: z.string().optional(),
+    email: z.string().optional(),
+    identifier: z.string().optional(),
+    password: z.string().min(1, "Password is required"),
+  })
+  .refine(
+    (data) => Boolean((data.email && data.email.trim()) || (data.identifier && data.identifier.trim())),
+    {
+      message: "Email or ATHLIX ID is required",
+      path: ["email"],
+    }
+  );
 
 export const coachInviteSchema = z.object({
   name: z.string().min(2, "Coach name must be at least 2 characters"),
@@ -42,13 +52,23 @@ export const coachInviteSchema = z.object({
   bio: z.string().optional(),
 });
 
+export const verifyAcademyCodeSchema = z.object({
+  academyCode: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{2}\d{4}$/, "Academy Code must follow format SSNNNN (e.g. JH0001)"),
+});
+
 export const verifyIdSchema = z.object({
-  athlixId: z.string().min(6, "Valid ATHLIX ID is required").trim().toUpperCase(),
+  academyCode: z.string().trim().toUpperCase().optional(),
+  athlixId: z.string().min(5, "Valid ATHLIX ID is required").trim().toUpperCase(),
   role: z.enum(["COACH", "PLAYER"]),
 });
 
 export const verifyOtpSchema = z.object({
-  athlixId: z.string().min(6).trim().toUpperCase(),
+  academyCode: z.string().optional(),
+  athlixId: z.string().min(5).trim().toUpperCase(),
   otp: z
     .string()
     .length(6, "OTP must be exactly 6 digits")
@@ -56,7 +76,8 @@ export const verifyOtpSchema = z.object({
 });
 
 export const resendOtpSchema = z.object({
-  athlixId: z.string().min(6).trim().toUpperCase(),
+  academyCode: z.string().optional(),
+  athlixId: z.string().min(5).trim().toUpperCase(),
 });
 
 export const setPasswordSchema = z
