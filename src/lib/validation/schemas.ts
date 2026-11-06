@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { validateAndNormalizePhone } from "./phone";
 
 export const locationSchema = z.object({
   address: z.string().optional(),
@@ -8,6 +9,57 @@ export const locationSchema = z.object({
   postalCode: z.string().optional(),
 });
 
+/**
+ * Validates and transforms a required contact phone number into normalized E.164 format.
+ * Rejects arbitrary text, alphabetic letters, and numbers with invalid digit counts.
+ */
+export const contactPhoneSchema = z
+  .string({ required_error: "Contact phone number is required" })
+  .min(1, "Contact phone number is required")
+  .transform((val) => val.trim())
+  .superRefine((val, ctx) => {
+    const res = validateAndNormalizePhone(val);
+    if (!res.isValid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: res.error || "Invalid contact phone number.",
+      });
+    }
+  })
+  .transform((val) => {
+    const res = validateAndNormalizePhone(val);
+    return res.e164 || val;
+  });
+
+/**
+ * Validates an optional phone number. Allows empty strings/undefined,
+ * but if provided, must be a valid phone number and transforms to E.164.
+ */
+export const optionalPhoneSchema = z
+  .string()
+  .optional()
+  .or(z.literal(""))
+  .transform((val) => {
+    if (!val) return undefined;
+    const trimmed = val.trim();
+    return trimmed ? trimmed : undefined;
+  })
+  .superRefine((val, ctx) => {
+    if (!val) return;
+    const res = validateAndNormalizePhone(val);
+    if (!res.isValid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: res.error || "Invalid phone number.",
+      });
+    }
+  })
+  .transform((val) => {
+    if (!val) return undefined;
+    const res = validateAndNormalizePhone(val);
+    return res.e164 || val;
+  });
+
 export const academyRegisterSchema = z.object({
   academyName: z.string().min(2, "Academy name must be at least 2 characters").max(100),
   description: z.string().max(1000).optional(),
@@ -16,7 +68,7 @@ export const academyRegisterSchema = z.object({
   country: z.string().min(2, "Country is required"),
   address: z.string().optional(),
   contactEmail: z.string().email("Invalid academy contact email"),
-  contactPhone: z.string().min(6, "Valid contact phone is required"),
+  contactPhone: contactPhoneSchema,
   ownerName: z.string().min(2, "Owner name must be at least 2 characters"),
   ownerEmail: z.string().email("Invalid owner email address"),
   password: z
@@ -45,7 +97,7 @@ export const loginSchema = z
 export const coachInviteSchema = z.object({
   name: z.string().min(2, "Coach name must be at least 2 characters"),
   email: z.string().email("Valid email required"),
-  phone: z.string().optional(),
+  phone: optionalPhoneSchema,
   sport: z.string().min(2, "Sport is required"),
   specialization: z.string().optional(),
   experienceYears: z.coerce.number().min(0).default(0),
@@ -144,10 +196,10 @@ export const playerSchema = z.object({
   photoUrl: z.string().url().optional().or(z.literal("")),
   contact: z
     .object({
-      phone: z.string().optional(),
+      phone: optionalPhoneSchema,
       email: z.string().email().optional().or(z.literal("")),
       emergencyContactName: z.string().optional(),
-      emergencyContactPhone: z.string().optional(),
+      emergencyContactPhone: optionalPhoneSchema,
     })
     .optional(),
   createLoginAccount: z.boolean().default(false),

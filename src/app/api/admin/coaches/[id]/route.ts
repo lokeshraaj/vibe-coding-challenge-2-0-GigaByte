@@ -4,6 +4,7 @@ import { requirePlatformAdmin } from "@/lib/permissions/auth-guard";
 import { Coach, User, Academy, Player, PracticeSession, Attendance, AuditLog } from "@/models";
 import { executeCoachCascadeDelete } from "@/modules/admin/cascade-delete-service";
 import { handleApiError, NotFoundError, BadRequestError } from "@/lib/errors";
+import { validateAndNormalizePhone } from "@/lib/validation/phone";
 import mongoose from "mongoose";
 
 export async function GET(
@@ -105,16 +106,25 @@ export async function PATCH(
       coach.bio = body.bio.trim();
     }
     if (body.phone !== undefined) {
-      coach.phone = body.phone.trim();
+      const rawPhone = typeof body.phone === "string" ? body.phone.trim() : "";
+      if (rawPhone) {
+        const phoneCheck = validateAndNormalizePhone(rawPhone);
+        if (!phoneCheck.isValid) {
+          throw new BadRequestError(phoneCheck.error || "Invalid coach phone number.");
+        }
+        coach.phone = phoneCheck.e164!;
+      } else {
+        coach.phone = "";
+      }
     }
 
     await coach.save();
 
     // If name or email updated, update User document
-    if (coach.userId && (body.name || body.phone)) {
+    if (coach.userId && (body.name || body.phone !== undefined)) {
       await User.findByIdAndUpdate(coach.userId, {
         ...(body.name ? { name: body.name.trim() } : {}),
-        ...(body.phone ? { "metadata.phone": body.phone.trim() } : {}),
+        ...(body.phone !== undefined ? { "metadata.phone": coach.phone } : {}),
       });
     }
 

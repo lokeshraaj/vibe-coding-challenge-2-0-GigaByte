@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 import { Coach, User, Scout, Player, Academy, AuditLog } from "@/models";
 import { generateAthlixId } from "@/lib/id-generator";
 import { sendCoachNotificationEmail } from "@/lib/email/brevo";
-import { ConflictError, NotFoundError } from "@/lib/errors";
+import { ConflictError, NotFoundError, BadRequestError } from "@/lib/errors";
+import { validateAndNormalizePhone } from "@/lib/validation/phone";
 
 export interface CreateCoachInput {
   academyId: string;
@@ -39,6 +40,16 @@ export async function createCoach(input: CreateCoachInput, actorId?: string) {
     throw new NotFoundError("Academy not found");
   }
 
+  // Validate and normalize phone if provided
+  let normalizedPhone = "";
+  if (input.phone && input.phone.trim()) {
+    const phoneCheck = validateAndNormalizePhone(input.phone);
+    if (!phoneCheck.isValid) {
+      throw new BadRequestError(phoneCheck.error || "Invalid coach phone number.");
+    }
+    normalizedPhone = phoneCheck.e164 || input.phone.trim();
+  }
+
   // Generate atomic, collision-free Coach ID (e.g. COFO001)
   const coachCode = await generateAthlixId({
     academyId: input.academyId,
@@ -63,7 +74,7 @@ export async function createCoach(input: CreateCoachInput, actorId?: string) {
       coachId: coachId,
       status: "PENDING",
       metadata: {
-        phone: input.phone?.trim() || "",
+        phone: normalizedPhone,
       },
     });
 
@@ -72,7 +83,7 @@ export async function createCoach(input: CreateCoachInput, actorId?: string) {
       academyId: new mongoose.Types.ObjectId(input.academyId),
       userId: userId,
       coachCode: coachCode,
-      phone: input.phone?.trim() || "",
+      phone: normalizedPhone,
       sport: input.sport.trim(),
       assignedSports:
         input.assignedSports && input.assignedSports.length > 0

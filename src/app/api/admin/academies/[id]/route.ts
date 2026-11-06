@@ -5,6 +5,7 @@ import { getAcademyDetails } from "@/modules/admin/admin-service";
 import { executeAcademyCascadeDelete } from "@/modules/admin/cascade-delete-service";
 import { Academy, AuditLog } from "@/models";
 import { handleApiError, NotFoundError, BadRequestError } from "@/lib/errors";
+import { validateAndNormalizePhone } from "@/lib/validation/phone";
 
 export async function GET(
   req: Request,
@@ -53,7 +54,13 @@ export async function PATCH(
       academy.sports = body.sports.map((s: string) => s.trim()).filter(Boolean);
     }
     if (body.contactEmail) academy.contactEmail = body.contactEmail.trim().toLowerCase();
-    if (body.contactPhone) academy.contactPhone = body.contactPhone.trim();
+    if (body.contactPhone) {
+      const phoneCheck = validateAndNormalizePhone(body.contactPhone);
+      if (!phoneCheck.isValid) {
+        throw new BadRequestError(phoneCheck.error || "Invalid contact phone number.");
+      }
+      academy.contactPhone = phoneCheck.e164!;
+    }
     if (body.location && typeof body.location === "object") {
       academy.location = {
         ...academy.location,

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Building2, ArrowRight, ShieldCheck, RefreshCw, KeyRound, CheckCircle2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { validateAndNormalizePhone } from "@/lib/validation/phone";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 
@@ -29,6 +31,7 @@ export default function RegisterAcademyPage() {
     ownerEmail: "",
     password: "",
   });
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
 
   // OTP Verification state
   const [challengeId, setChallengeId] = useState("");
@@ -59,13 +62,24 @@ export default function RegisterAcademyPage() {
   // Step 1: Submit Form to initiate OTP verification
   const handleInitiateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Mandatory client-side validation for phone number
+    const phoneValidation = validateAndNormalizePhone(formData.contactPhone);
+    if (!phoneValidation.isValid) {
+      toast.error(phoneValidation.error || "Please provide a valid contact phone number.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const res = await fetch("/api/auth/register-academy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          contactPhone: phoneValidation.e164 || formData.contactPhone,
+        }),
       });
 
       const data = await res.json();
@@ -205,12 +219,19 @@ export default function RegisterAcademyPage() {
                       required
                     />
 
-                    <Input
+                    <PhoneInput
                       label="Contact Phone *"
                       name="contactPhone"
-                      placeholder="+91 9876543210"
                       value={formData.contactPhone}
-                      onChange={handleChange}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, contactPhone: e.target.value }))
+                      }
+                      onValidationChange={(isValid, e164) => {
+                        setIsPhoneValid(isValid);
+                        if (e164) {
+                          setFormData((prev) => ({ ...prev, contactPhone: e164 }));
+                        }
+                      }}
                       required
                     />
                   </div>
@@ -304,6 +325,7 @@ export default function RegisterAcademyPage() {
                   size="lg"
                   className="w-full text-sm font-bold gap-2 shadow-sm"
                   isLoading={isLoading}
+                  disabled={isLoading || !isPhoneValid}
                 >
                   <span>Continue to Email Verification</span>
                   <ArrowRight className="h-4 w-4" />

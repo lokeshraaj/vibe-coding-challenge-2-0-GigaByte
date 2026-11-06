@@ -6,7 +6,8 @@ import { slugify } from "@/lib/utils";
 import { generateAcademyCode } from "@/lib/id-generator";
 import { sendAcademyRegistrationEmail, sendAcademyOtpEmail } from "@/lib/email/brevo";
 import { generateSecureOtp, hashOtp, verifyOtp, maskEmail } from "@/lib/auth/otp";
-import { ConflictError, NotFoundError, ValidationError, UnauthorizedError } from "@/lib/errors";
+import { ConflictError, NotFoundError, ValidationError, UnauthorizedError, BadRequestError } from "@/lib/errors";
+import { validateAndNormalizePhone } from "@/lib/validation/phone";
 
 export interface RegisterAcademyInput {
   academyName: string;
@@ -32,6 +33,13 @@ export interface RegisterAcademyInput {
 export async function initiateAcademyRegistration(input: RegisterAcademyInput, ipAddress?: string) {
   const normalizedOwnerEmail = input.ownerEmail.trim().toLowerCase();
   const normalizedContactEmail = input.contactEmail.trim().toLowerCase();
+
+  // Validate and normalize contact phone to E.164
+  const phoneCheck = validateAndNormalizePhone(input.contactPhone);
+  if (!phoneCheck.isValid) {
+    throw new BadRequestError(phoneCheck.error || "Valid contact phone number is required.");
+  }
+  const normalizedContactPhone = phoneCheck.e164 || input.contactPhone.trim();
 
   // 1. Check if owner email is already taken by an active or existing user
   const existingUser = await User.findOne({ email: normalizedOwnerEmail });
@@ -61,7 +69,7 @@ export async function initiateAcademyRegistration(input: RegisterAcademyInput, i
       country: input.country.trim(),
       address: input.address?.trim() || "",
       contactEmail: normalizedContactEmail,
-      contactPhone: input.contactPhone.trim(),
+      contactPhone: normalizedContactPhone,
       ownerName: input.ownerName.trim(),
       ownerEmail: normalizedOwnerEmail,
       passwordHash,
@@ -278,6 +286,12 @@ export async function registerAcademy(input: RegisterAcademyInput) {
   const normalizedOwnerEmail = input.ownerEmail.trim().toLowerCase();
   const normalizedContactEmail = input.contactEmail.trim().toLowerCase();
 
+  const phoneCheck = validateAndNormalizePhone(input.contactPhone);
+  if (!phoneCheck.isValid) {
+    throw new BadRequestError(phoneCheck.error || "Valid contact phone number is required.");
+  }
+  const normalizedContactPhone = phoneCheck.e164 || input.contactPhone.trim();
+
   const existingUser = await User.findOne({ email: normalizedOwnerEmail });
   if (existingUser) {
     throw new ConflictError("An account with this owner email address already exists.");
@@ -304,7 +318,7 @@ export async function registerAcademy(input: RegisterAcademyInput) {
     passwordHash: hashedPassword,
     status: "ACTIVE",
     metadata: {
-      phone: input.contactPhone.trim(),
+      phone: normalizedContactPhone,
     },
   });
 
@@ -322,7 +336,7 @@ export async function registerAcademy(input: RegisterAcademyInput) {
       country: input.country.trim(),
     },
     contactEmail: normalizedContactEmail,
-    contactPhone: input.contactPhone.trim(),
+    contactPhone: normalizedContactPhone,
     ownerId: ownerUserId,
     status: "ACTIVE",
   });

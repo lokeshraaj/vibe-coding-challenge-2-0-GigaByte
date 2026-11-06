@@ -5,6 +5,7 @@ import { getUserDetails } from "@/modules/admin/admin-service";
 import { executeUserCascadeDelete } from "@/modules/admin/cascade-delete-service";
 import { User, AuditLog } from "@/models";
 import { handleApiError, NotFoundError, ForbiddenError, BadRequestError } from "@/lib/errors";
+import { validateAndNormalizePhone } from "@/lib/validation/phone";
 
 export async function GET(
   req: Request,
@@ -76,10 +77,22 @@ export async function PATCH(
     }
 
     if (body.phone !== undefined) {
-      user.metadata = {
-        ...user.metadata,
-        phone: typeof body.phone === "string" ? body.phone.trim() : "",
-      };
+      const rawPhone = typeof body.phone === "string" ? body.phone.trim() : "";
+      if (rawPhone) {
+        const phoneCheck = validateAndNormalizePhone(rawPhone);
+        if (!phoneCheck.isValid) {
+          throw new BadRequestError(phoneCheck.error || "Invalid phone number.");
+        }
+        user.metadata = {
+          ...user.metadata,
+          phone: phoneCheck.e164!,
+        };
+      } else {
+        user.metadata = {
+          ...user.metadata,
+          phone: "",
+        };
+      }
     }
 
     if (body.role && ["PLATFORM_ADMIN", "ACADEMY_OWNER", "COACH", "SCOUT", "PLAYER"].includes(body.role)) {

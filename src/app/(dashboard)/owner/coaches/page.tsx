@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { DashboardShell } from "@/components/shared/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { UserCheck, Plus, X, Copy, Mail, Check } from "lucide-react";
@@ -36,6 +37,7 @@ export default function CoachesManagementPage() {
   const [submitting, setSubmitting] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [isPhoneValid, setIsPhoneValid] = useState(true);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -312,12 +314,18 @@ export default function CoachesManagementPage() {
                     required
                   />
 
-                  <Input
-                    label="Phone Number"
-                    type="tel"
-                    placeholder="+91 98765 43210"
+                  <PhoneInput
+                    label="Phone Number (Optional)"
+                    name="phone"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                    onValidationChange={(isValid, e164) => {
+                      setIsPhoneValid(isValid);
+                      if (e164) {
+                        setFormData((prev) => ({ ...prev, phone: e164 }));
+                      }
+                    }}
+                    required={false}
                   />
                 </div>
 
@@ -382,6 +390,7 @@ export default function CoachesManagementPage() {
                     variant="athletic"
                     size="sm"
                     isLoading={submitting}
+                    disabled={submitting || !isPhoneValid}
                   >
                     Provision & Send Notice
                   </Button>

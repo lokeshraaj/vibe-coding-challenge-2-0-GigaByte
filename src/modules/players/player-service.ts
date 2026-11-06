@@ -3,7 +3,8 @@ import { Player, Coach, User, Academy, AuditLog } from "@/models";
 import { calculateAge } from "@/lib/utils";
 import { generateAthlixId } from "@/lib/id-generator";
 import { sendPlayerNotificationEmail } from "@/lib/email/brevo";
-import { ConflictError, NotFoundError, ForbiddenError } from "@/lib/errors";
+import { ConflictError, NotFoundError, ForbiddenError, BadRequestError } from "@/lib/errors";
+import { validateAndNormalizePhone } from "@/lib/validation/phone";
 
 export interface CreatePlayerInput {
   academyId: string;
@@ -74,6 +75,31 @@ export async function createPlayer(input: CreatePlayerInput, actorId?: string) {
   const hasEmail = Boolean(input.contact?.email?.trim());
   const normalizedEmail = input.contact?.email?.trim().toLowerCase();
 
+  // Validate and normalize contact phone numbers
+  let normalizedPhone = "";
+  if (input.contact?.phone && input.contact.phone.trim()) {
+    const phoneCheck = validateAndNormalizePhone(input.contact.phone);
+    if (!phoneCheck.isValid) {
+      throw new BadRequestError(phoneCheck.error || "Invalid player contact phone number.");
+    }
+    normalizedPhone = phoneCheck.e164 || input.contact.phone.trim();
+  }
+
+  let normalizedEmergencyPhone = "";
+  if (input.contact?.emergencyContactPhone && input.contact.emergencyContactPhone.trim()) {
+    const emCheck = validateAndNormalizePhone(input.contact.emergencyContactPhone);
+    if (!emCheck.isValid) {
+      throw new BadRequestError(emCheck.error || "Invalid emergency contact phone number.");
+    }
+    normalizedEmergencyPhone = emCheck.e164 || input.contact.emergencyContactPhone.trim();
+  }
+
+  const normalizedContact = {
+    ...input.contact,
+    phone: normalizedPhone,
+    emergencyContactPhone: normalizedEmergencyPhone,
+  };
+
   // If email is provided, create pending user identity for ID-based activation
   if (hasEmail && normalizedEmail) {
     const existingUser = await User.findOne({ email: normalizedEmail });
@@ -91,7 +117,7 @@ export async function createPlayer(input: CreatePlayerInput, actorId?: string) {
       playerId: playerId,
       status: "PENDING",
       metadata: {
-        phone: input.contact?.phone?.trim() || "",
+        phone: normalizedPhone,
       },
     });
   }
@@ -109,7 +135,7 @@ export async function createPlayer(input: CreatePlayerInput, actorId?: string) {
     position: input.position.trim(),
     photoUrl: input.photoUrl || "",
     enrollmentDate: new Date(input.enrollmentDate),
-    contact: input.contact || {},
+    contact: normalizedContact,
     accountStatus: hasEmail ? "PENDING" : "ACTIVE",
     status: "ACTIVE",
   });
