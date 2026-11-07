@@ -1,5 +1,5 @@
-import { getApps, initializeApp, cert, App } from "firebase-admin/app";
-import { getAuth, DecodedIdToken } from "firebase-admin/auth";
+import type { App } from "firebase-admin/app";
+import type { DecodedIdToken } from "firebase-admin/auth";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
 function formatPrivateKey(key?: string): string | undefined {
@@ -18,14 +18,8 @@ function formatPrivateKey(key?: string): string | undefined {
 
 let firebaseAdminApp: App | null = null;
 
-export function getFirebaseAdminApp(): App | null {
+export async function getFirebaseAdminApp(): Promise<App | null> {
   if (firebaseAdminApp) {
-    return firebaseAdminApp;
-  }
-
-  const existingApps = getApps();
-  if (existingApps.length > 0 && existingApps[0]) {
-    firebaseAdminApp = existingApps[0];
     return firebaseAdminApp;
   }
 
@@ -35,6 +29,12 @@ export function getFirebaseAdminApp(): App | null {
 
   if (projectId && clientEmail && privateKey) {
     try {
+      const { getApps, initializeApp, cert } = await import("firebase-admin/app");
+      const existingApps = getApps();
+      if (existingApps.length > 0 && existingApps[0]) {
+        firebaseAdminApp = existingApps[0];
+        return firebaseAdminApp;
+      }
       firebaseAdminApp = initializeApp({
         credential: cert({
           projectId,
@@ -61,7 +61,7 @@ const GOOGLE_JWKS = createRemoteJWKSet(
  * Enforces cryptographic signature, audience, issuer, and expiration checks.
  *
  * Strategies:
- * 1. Firebase Admin SDK if service account credentials are fully initialized.
+ * 1. Firebase Admin SDK if service account credentials are provided.
  * 2. Google Public JWKS standard cryptographic verification via WebCrypto / jose
  *    (ensures rock-solid zero-downtime verification on Vercel serverless environments).
  */
@@ -74,12 +74,15 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<DecodedIdT
     throw new Error("FIREBASE_PROJECT_ID or NEXT_PUBLIC_FIREBASE_PROJECT_ID is not configured.");
   }
 
-  // Strategy 1: Firebase Admin SDK if initialized
-  const app = getFirebaseAdminApp();
-  if (app) {
+  // Strategy 1: Attempt Firebase Admin SDK if service account credentials are provided
+  if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
     try {
-      const auth = getAuth(app);
-      return await auth.verifyIdToken(idToken);
+      const app = await getFirebaseAdminApp();
+      if (app) {
+        const { getAuth } = await import("firebase-admin/auth");
+        const auth = getAuth(app);
+        return await auth.verifyIdToken(idToken);
+      }
     } catch (adminError: any) {
       // Re-throw genuine token revocation or expiration
       if (
@@ -92,7 +95,7 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<DecodedIdT
     }
   }
 
-  // Strategy 2: Official Google JWKS Signature Verification
+  // Strategy 2: Official Google JWKS Signature Verification via jose
   const { payload } = await jwtVerify(idToken, GOOGLE_JWKS, {
     issuer: `https://securetoken.google.com/${projectId}`,
     audience: projectId,
