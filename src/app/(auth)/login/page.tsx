@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { signIn } from "next-auth/react";
+import { signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase/client";
 import { Building2, IdCard, Lock, Eye, EyeOff, UserPlus } from "lucide-react";
 
 function LoginForm() {
@@ -61,11 +62,46 @@ function LoginForm() {
   }, [router, searchParams]);
 
   const handleGoogleSignIn = async () => {
+    if (isGoogleLoading || isLoading) return;
     setIsGoogleLoading(true);
+
     try {
-      await signIn("google", { callbackUrl: "/login" });
-    } catch {
-      toast.error("Google Sign-In could not be initiated.");
+      if (!auth || !googleProvider) {
+        throw new Error("Firebase Authentication is not configured.");
+      }
+
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      const idToken = await userCredential.user.getIdToken(true);
+
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Google authentication failed");
+      }
+
+      toast.success(`Welcome back, ${data.data.user.name}!`);
+
+      // Role-based dashboard redirect
+      const role = data.data.user.role;
+      if (role === "PLATFORM_ADMIN" || role === "SUPER_ADMIN") router.push("/admin");
+      else if (role === "ACADEMY_OWNER") router.push("/owner");
+      else if (role === "COACH") router.push("/coach");
+      else if (role === "SCOUT") router.push("/scout");
+      else if (role === "PLAYER") router.push("/player");
+      else router.push("/");
+
+      router.refresh();
+    } catch (err: any) {
+      if (err?.code === "auth/popup-closed-by-user" || err?.code === "auth/cancelled-popup-request") {
+        return;
+      }
+      toast.error(err instanceof Error ? err.message : "Google Sign-In failed");
+    } finally {
       setIsGoogleLoading(false);
     }
   };

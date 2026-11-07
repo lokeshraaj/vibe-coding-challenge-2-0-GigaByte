@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserRole } from "@/types";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
 
 interface DashboardHeaderProps {
   userName?: string;
@@ -22,6 +24,11 @@ export function DashboardHeader({
 
   const handleLogout = async () => {
     try {
+      if (auth && auth.currentUser) {
+        try {
+          await signOut(auth);
+        } catch {}
+      }
       await fetch("/api/auth/logout", { method: "POST" });
       router.push("/login");
       router.refresh();
