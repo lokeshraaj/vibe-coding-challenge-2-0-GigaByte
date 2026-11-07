@@ -192,7 +192,7 @@ function LoginForm() {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-11 text-xs font-semibold border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE] transition-colors gap-3"
+            className="w-full h-11 text-xs font-semibold border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#101820] transition-colors gap-3"
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading || isLoading}
           >
@@ -334,7 +334,7 @@ function LoginForm() {
                   type="button"
                   variant="outline"
                   size="md"
-                  className="w-full text-xs font-bold gap-2 border-[#DCE1E3] bg-[#FAF9F5] text-[#101820] hover:bg-[#F4F3EE] hover:border-[#101820]"
+                  className="w-full text-xs font-bold gap-2 border-[#DCE1E3] bg-[#FAF9F5] text-[#101820] hover:bg-[#101820] hover:border-[#101820]"
                 >
                   <UserPlus className="h-4 w-4 text-[#101820]" />
                   <span>Activate ID (Coach, Player or Scout)</span>

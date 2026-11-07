@@ -406,7 +406,7 @@ export function IdRegistrationFlow({
               <div className="rounded-lg bg-amber-50/70 border border-amber-200 p-3 text-xs text-amber-900 flex items-start gap-2.5">
                 <AlertCircle className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  <strong>Important:</strong> If you cannot find your Coach/Player/Scout ID email in your inbox, please check your Spam/Junk folder.
+                  <strong>Important:</strong> If you cannot find your Coach/Player/Scout ID, please check your Spam folder.
                 </p>
               </div>
 
