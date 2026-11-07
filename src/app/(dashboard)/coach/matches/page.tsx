@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Trophy, Plus, X, AlertCircle, CheckCircle2, Lock, Shield } from "lucide-react";
+import { Trophy, Plus, X, AlertCircle, CheckCircle2, Lock, Shield, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { MatchDetailsModal } from "@/components/matches/match-details-modal";
+import { FeatureLockInfo } from "@/components/ui/feature-lock-info";
 
 interface MatchItem {
   id: string;
@@ -46,6 +48,10 @@ export default function CoachMatchesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [closedSessions, setClosedSessions] = useState<ClosedSessionOption[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  // Match details modal
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const [matchForm, setMatchForm] = useState({
     sessionId: "",
@@ -240,10 +246,20 @@ export default function CoachMatchesPage() {
                 Competitive Match Logs
               </h1>
               {assignedSport && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
-                  <Shield className="h-3.5 w-3.5" />
-                  {assignedSport}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
+                    <Shield className="h-3.5 w-3.5" />
+                    {assignedSport}
+                  </span>
+                  <FeatureLockInfo
+                    category="SPORT"
+                    title="Sport Discipline Locked"
+                    reason={`Your coaching credentials are locked to ${assignedSport}. Match fixtures can only be logged for this sport.`}
+                    whoCanChange="Academy Administrator or Super Admin"
+                    suggestedAction="Contact your administrator if your assigned discipline needs to be changed."
+                    size="xs"
+                  />
+                </div>
               )}
             </div>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
@@ -251,15 +267,25 @@ export default function CoachMatchesPage() {
             </p>
           </div>
 
-          <Button
-            variant="athletic"
-            size="sm"
-            onClick={handleOpenModal}
-            className="gap-2 font-bold shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Record Match Performance</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="athletic"
+              size="sm"
+              onClick={handleOpenModal}
+              className="gap-2 font-bold shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Record Match Performance</span>
+            </Button>
+            <FeatureLockInfo
+              category="PREREQUISITE"
+              title="Practice Session Required"
+              reason="Matches can only be recorded against closed practice sessions so that only verified attendees are eligible to play."
+              whoCanChange="Assigned Coach"
+              suggestedAction="Conduct and close a practice session before recording competitive fixtures."
+              size="sm"
+            />
+          </div>
         </div>
 
         {/* Matches List Card */}
@@ -285,6 +311,7 @@ export default function CoachMatchesPage() {
                       <th className="p-4">Squad Fielded</th>
                       <th className="p-4">Top Performers</th>
                       <th className="p-4">Outcome</th>
+                      <th className="p-4 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#DCE1E3] text-[#101820]">
@@ -321,6 +348,21 @@ export default function CoachMatchesPage() {
                         <td className="p-4">
                           <StatusBadge status={m.result} type="match" />
                         </td>
+                        <td className="p-4 text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedMatchId(m.id);
+                              setIsDetailsOpen(true);
+                            }}
+                            className="gap-1.5 text-xs font-bold hover:bg-[#101820] hover:text-[#C6F432] transition-colors"
+                            title="View Complete Match Details"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>View</span>
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -354,10 +396,20 @@ export default function CoachMatchesPage() {
               <form onSubmit={handleCreateMatch} className="p-6 space-y-5">
                 {/* Linked Closed Session Selection */}
                 <div className="p-4 rounded-xl bg-[#F4F3EE] border border-[#DCE1E3] space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-[#101820]" />
-                    <span>Link to Closed Practice Session *</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#101820] flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-[#101820]" />
+                      <span>Link to Closed Practice Session *</span>
+                    </label>
+                    <FeatureLockInfo
+                      category="PREREQUISITE"
+                      title="Eligibility Prerequisite"
+                      reason="ATHLIX rules enforce that only athletes marked Present in a closed practice session can be fielded in a match."
+                      whoCanChange="Assigned Squad Coach"
+                      suggestedAction="Only athletes marked Present in the closed practice session are eligible for the fixture."
+                      size="xs"
+                    />
+                  </div>
                   {closedSessions.length > 0 ? (
                     <select
                       className="flex h-11 w-full rounded-md border border-[#DCE1E3] bg-white px-3 py-2 text-sm text-[#101820] focus-visible:outline-none focus-visible:border-[#101820]"
@@ -403,9 +455,19 @@ export default function CoachMatchesPage() {
 
                 {/* Sport Discipline Locked Display */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
-                    Sport Discipline
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
+                      Sport Discipline
+                    </label>
+                    <FeatureLockInfo
+                      category="SPORT"
+                      title="Discipline Locked"
+                      reason="Matches automatically inherit your assigned coaching sport discipline."
+                      whoCanChange="Academy Administrator"
+                      suggestedAction="Fixtures are automatically registered under your assigned coaching discipline."
+                      size="xs"
+                    />
+                  </div>
                   <div className="flex h-11 w-full items-center justify-between rounded-md border border-[#DCE1E3] bg-[#F4F3EE] px-3 text-sm font-bold text-[#101820]">
                     <span className="flex items-center gap-2">
                       <Lock className="h-4 w-4 text-[#101820]" />
@@ -527,7 +589,17 @@ export default function CoachMatchesPage() {
                   )}
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
+                  {closedSessions.length === 0 && (
+                    <FeatureLockInfo
+                      category="PREREQUISITE"
+                      title="Submission Locked"
+                      reason="You must conduct and close at least one practice session before recording a match."
+                      whoCanChange="Assigned Coach"
+                      suggestedAction="Conduct and close a practice session before recording a match."
+                      size="sm"
+                    />
+                  )}
                   <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
                     Cancel
                   </Button>
@@ -545,6 +617,16 @@ export default function CoachMatchesPage() {
             </Card>
           </div>
         )}
+
+        {/* View Match Details Modal */}
+        <MatchDetailsModal
+          matchId={selectedMatchId}
+          isOpen={isDetailsOpen}
+          onClose={() => {
+            setIsDetailsOpen(false);
+            setSelectedMatchId(null);
+          }}
+        />
       </div>
     </DashboardShell>
   );

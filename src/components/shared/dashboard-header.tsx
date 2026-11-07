@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { UserRole } from "@/types";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
+import { RestrictionInfo } from "@/components/ui/feature-lock-info";
 
 interface DashboardHeaderProps {
   userName?: string;
@@ -46,14 +47,33 @@ export function DashboardHeader({
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#8B969E] block">
               Active Academy Tenant
             </span>
-            <span className="text-sm font-bold tracking-tight text-[#101820]">
-              {academyName}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-bold tracking-tight text-[#101820]">
+                {academyName}
+              </span>
+              <RestrictionInfo
+                category="ROLE"
+                title="Academy Tenant Context"
+                reason="Your account is restricted to this sports academy. All athlete records, squad operations, attendance, and match performances are strictly isolated to this tenant."
+                whoCanChange="Platform Administrator / Super Admin"
+                suggestedAction="Contact platform support if academy tenant affiliation needs adjustment."
+                size="xs"
+              />
+            </div>
           </div>
         ) : (
-          <span className="text-sm font-bold tracking-tight text-[#101820]">
-            ATHLIX Global Management
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-bold tracking-tight text-[#101820]">
+              ATHLIX Global Management
+            </span>
+            <RestrictionInfo
+              category="ROLE"
+              title="Global Management Scope"
+              reason="Platform Administration mode with multi-tenant oversight across all registered sports academies."
+              whoCanChange="Super Administrator"
+              size="xs"
+            />
+          </div>
         )}
       </div>
 
@@ -69,9 +89,19 @@ export function DashboardHeader({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="hidden md:inline-block px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#F4F3EE] text-[#101820] border border-[#DCE1E3]">
-            {userRole.replace("_", " ")}
-          </span>
+          <div className="hidden md:inline-flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#F4F3EE] text-[#101820] border border-[#DCE1E3]">
+              {userRole.replace("_", " ")}
+            </span>
+            <RestrictionInfo
+              category="ROLE"
+              title={`${userRole.replace("_", " ")} Role Access`}
+              reason={`Your account operates with ${userRole.replace("_", " ")} privileges. Dashboard sections, write actions, and reporting views are scoped to this role.`}
+              whoCanChange="Academy Administrator or Super Admin"
+              suggestedAction="Contact your academy administrator if your role permissions need to be updated."
+              size="xs"
+            />
+          </div>
 
           <Button
             variant="ghost"

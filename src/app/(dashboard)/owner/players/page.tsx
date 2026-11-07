@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { RestrictionInfo } from "@/components/ui/feature-lock-info";
 import { Users, Search, Filter } from "lucide-react";
 import { toast } from "sonner";
 
@@ -63,9 +64,19 @@ export default function OwnerPlayersPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
-              Academy Player Directory
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+                Academy Player Directory
+              </h1>
+              <RestrictionInfo
+                category="ROLE"
+                title="Academy-Wide Read-Only View"
+                reason="Academy owners can review all enrolled athletes across all sports disciplines. Individual athlete profile edits, daily practice attendance, and match performances are managed directly by their assigned squad coach."
+                whoCanChange="Assigned Squad Coach"
+                suggestedAction="Contact the athlete's assigned coach if profile updates or attendance adjustments are required."
+                size="xs"
+              />
+            </div>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
               All Enrolled Athletes Across Coaching Rosters
             </p>

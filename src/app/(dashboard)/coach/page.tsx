@@ -7,6 +7,7 @@ import { MetricCard } from "@/components/shared/metric-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { RestrictionInfo } from "@/components/ui/feature-lock-info";
 import { Users, CalendarCheck, Trophy, Award, ArrowRight, Shield } from "lucide-react";
 
 interface CoachStats {
@@ -62,10 +63,20 @@ export default function CoachDashboardPage() {
                 Coach Desk & Squad Command
               </h1>
               {stats?.assignedSport && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] shadow-2xs uppercase tracking-wider">
-                  <Shield className="h-3.5 w-3.5" />
-                  {stats.assignedSport} Discipline
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] shadow-2xs uppercase tracking-wider">
+                    <Shield className="h-3.5 w-3.5" />
+                    {stats.assignedSport} Discipline
+                  </span>
+                  <RestrictionInfo
+                    category="SPORT"
+                    title="Sport Discipline Restriction"
+                    reason={`Your coach account is assigned to ${stats.assignedSport}. Your squad roster, practice sessions, and match scoring are strictly restricted to this sport discipline.`}
+                    whoCanChange="Academy Administrator or Super Admin"
+                    suggestedAction="Contact your academy administrator if your sport discipline needs to be updated."
+                    size="xs"
+                  />
+                </div>
               )}
             </div>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { DashboardShell } from "@/components/shared/dashboard-shell";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { RestrictionInfo } from "@/components/ui/feature-lock-info";
 import { CalendarCheck } from "lucide-react";
 
 export default function OwnerSessionsPage() {
@@ -26,9 +27,19 @@ export default function OwnerSessionsPage() {
     <DashboardShell allowedRoles={["ACADEMY_OWNER", "PLATFORM_ADMIN"]}>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
-            Practice Sessions Overview
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+              Practice Sessions Overview
+            </h1>
+            <RestrictionInfo
+              category="ROLE"
+              title="Coaching Squad Management"
+              reason="Practice sessions and daily roster attendance are scheduled and locked directly by each coach from their dedicated Coach Desk."
+              whoCanChange="Assigned Squad Coach"
+              suggestedAction="Squad coaches conduct and lock sessions from their respective dashboards."
+              size="xs"
+            />
+          </div>
           <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
             All Practice Sessions Across Coaching Squads
           </p>

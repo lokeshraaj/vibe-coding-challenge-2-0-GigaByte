@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Building2, ArrowRight, ShieldCheck, RefreshCw, KeyRound, CheckCircle2, Copy } from "lucide-react";
+import { Building2, ArrowRight, ShieldCheck, RefreshCw, KeyRound, CheckCircle2, Copy, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -391,6 +391,14 @@ export default function RegisterAcademyPage() {
                       <RefreshCw className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
                       <span>{resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"}</span>
                     </button>
+                  </div>
+
+                  {/* Spam/Junk Folder Reminder */}
+                  <div className="rounded-lg bg-amber-50/70 border border-amber-200 p-2.5 text-xs text-amber-900 flex items-start gap-2 mt-2">
+                    <AlertCircle className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
+                    <p className="leading-snug">
+                      Didn&apos;t receive the verification code? Please check your Spam/Junk folder before requesting a new code.
+                    </p>
                   </div>
                 </div>
 

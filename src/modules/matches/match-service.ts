@@ -224,7 +224,9 @@ export async function getMatchDetails(
     query.sport = new RegExp(`^${sport.trim()}$`, "i");
   }
 
-  const match = await Match.findOne(query).populate("coachId", "sport");
+  const match = await Match.findOne(query)
+    .populate("coachId", "sport")
+    .populate("sessionId", "title date status");
 
   if (!match) {
     const existing = await Match.findOne({
@@ -241,37 +243,50 @@ export async function getMatchDetails(
     .populate("playerId", "name playerCode position photoUrl")
     .lean();
 
+  const sessionObj = match.sessionId as unknown as {
+    _id?: mongoose.Types.ObjectId;
+    title?: string;
+    date?: Date;
+    status?: string;
+  } | null;
+
   return {
     match: {
       id: match._id.toString(),
-      coachId: match.coachId._id.toString(),
+      coachId: (match.coachId as any)?._id?.toString?.() || match.coachId?.toString?.() || "",
+      sessionId: sessionObj?._id ? sessionObj._id.toString() : match.sessionId?.toString?.() || null,
+      sessionTitle: sessionObj?.title || null,
+      sessionDate: sessionObj?.date ? new Date(sessionObj.date).toISOString() : null,
+      sessionStatus: sessionObj?.status || null,
       date: match.date.toISOString(),
       sport: match.sport,
       opponentName: match.opponentName,
-      venue: match.venue,
-      scoreLabel: match.scoreLabel,
+      venue: match.venue || "",
+      scoreLabel: match.scoreLabel || "Goals",
       academyTeamScore: match.academyTeamScore,
       opponentScore: match.opponentScore,
       result: match.result,
-      notes: match.notes,
+      notes: match.notes || "",
+      createdAt: (match as any).createdAt ? (match as any).createdAt.toISOString() : undefined,
+      updatedAt: (match as any).updatedAt ? (match as any).updatedAt.toISOString() : undefined,
     },
     participants: participants.map((p) => {
       const pl = p.playerId as unknown as {
-        _id: mongoose.Types.ObjectId;
-        name: string;
-        playerCode: string;
-        position: string;
+        _id?: mongoose.Types.ObjectId;
+        name?: string;
+        playerCode?: string;
+        position?: string;
         photoUrl?: string;
-      };
+      } | null;
       return {
-        playerId: pl._id.toString(),
-        name: pl.name,
-        playerCode: pl.playerCode,
-        position: pl.position,
-        photoUrl: pl.photoUrl,
-        score: p.score,
-        minutesPlayed: p.minutesPlayed,
-        performanceNotes: p.performanceNotes,
+        playerId: pl?._id ? pl._id.toString() : p.playerId?.toString?.() || "",
+        name: pl?.name || "Athlete",
+        playerCode: pl?.playerCode || "N/A",
+        position: pl?.position || "Player",
+        photoUrl: pl?.photoUrl,
+        score: p.score ?? 0,
+        minutesPlayed: p.minutesPlayed ?? 0,
+        performanceNotes: p.performanceNotes || "",
       };
     }),
   };

@@ -251,7 +251,7 @@ function LoginForm() {
                 className="font-mono uppercase"
               />
               <p className="text-[11px] text-[#8B969E]">
-                Required for Coach, Player and Scout logins. (Optional for Super Admin / Owner email logins)
+                  Academy code received on Email. Check Spam Email
               </p>
             </div>
 
@@ -337,7 +337,7 @@ function LoginForm() {
                   className="w-full text-xs font-bold gap-2 border-[#DCE1E3] bg-[#FAF9F5] text-[#101820] hover:bg-[#F4F3EE] hover:border-[#101820]"
                 >
                   <UserPlus className="h-4 w-4 text-[#101820]" />
-                  <span>Register (Coach, Player or Scout)</span>
+                  <span>Activate ID (Coach, Player or Scout)</span>
                 </Button>
               </Link>
             </div>

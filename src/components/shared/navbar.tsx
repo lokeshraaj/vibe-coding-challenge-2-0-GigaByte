@@ -26,12 +26,6 @@ export function Navbar() {
             Features
           </Link>
           <Link
-            href="/#scouting"
-            className="text-xs font-semibold uppercase tracking-wider text-[#8B969E] hover:text-[#101820] transition-colors"
-          >
-            Scouting Engine
-          </Link>
-          <Link
             href="/#how-it-works"
             className="text-xs font-semibold uppercase tracking-wider text-[#8B969E] hover:text-[#101820] transition-colors"
           >

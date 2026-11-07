@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { RestrictionInfo } from "@/components/ui/feature-lock-info";
 import { UserCheck, Plus, X, Copy, Mail, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -171,7 +172,19 @@ export default function CoachesManagementPage() {
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-[#DCE1E3] bg-[#F4F3EE] text-[10px] uppercase font-bold tracking-wider text-[#8B969E]">
-                      <th className="p-4">Coach ID</th>
+                      <th className="p-4">
+                        <div className="flex items-center gap-1">
+                          <span>Coach ID</span>
+                          <RestrictionInfo
+                            category="SYSTEM"
+                            title="Permanent Coach ID"
+                            reason="Coach IDs are assigned uniquely upon creation and cannot be edited manually."
+                            whoCanChange="System Managed"
+                            suggestedAction="Use this ID for coach sign-in and activation."
+                            size="xs"
+                          />
+                        </div>
+                      </th>
                       <th className="p-4">Coach Details</th>
                       <th className="p-4">Sport & Spec</th>
                       <th className="p-4">Experience</th>
@@ -376,7 +389,17 @@ export default function CoachesManagementPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
+                  {!isPhoneValid && (
+                    <RestrictionInfo
+                      category="DATA"
+                      title="Invalid Phone Format"
+                      reason="Coach contact phone must be a valid national or international telephone number before the invitation notice can be sent."
+                      whoCanChange="Form Author"
+                      suggestedAction="Enter a valid phone number with the appropriate country code."
+                      size="sm"
+                    />
+                  )}
                   <Button
                     type="button"
                     variant="ghost"

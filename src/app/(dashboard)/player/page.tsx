@@ -5,6 +5,7 @@ import { DashboardShell } from "@/components/shared/dashboard-shell";
 import { MetricCard } from "@/components/shared/metric-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { RestrictionInfo } from "@/components/ui/feature-lock-info";
 import { User, Award, CalendarCheck, Trophy, CheckCircle, Clock } from "lucide-react";
 import { IEligibilityCalculation } from "@/types";
 import { toast } from "sonner";
@@ -67,7 +68,23 @@ export default function PlayerDashboardPage() {
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
                   {data?.player?.name || "Athlete Portal"}
                 </h1>
-                {elig && <StatusBadge status={elig.status} type="eligibility" />}
+                {elig && (
+                  <div className="flex items-center gap-1.5">
+                    <StatusBadge status={elig.status} type="eligibility" />
+                    <RestrictionInfo
+                      category={elig.status === "READY" ? "STATUS" : "PREREQUISITE"}
+                      title={elig.status === "READY" ? "Trial Ready Certified" : "Trial Qualification Pending"}
+                      reason={
+                        elig.status === "READY"
+                          ? "You have satisfied both conditions: >= 75% attendance and >= 2 matches. Your profile is now visible on the talent scout radar."
+                          : elig.reasons?.join(". ") || "Both 75% attendance and 2 match appearances are required to unlock scout visibility."
+                      }
+                      whoCanChange="Assigned Squad Coach"
+                      suggestedAction="Attend scheduled practice sessions and participate in matches to achieve qualification."
+                      size="xs"
+                    />
+                  </div>
+                )}
               </div>
               <p className="text-xs text-[#8B969E] uppercase font-bold tracking-wider mt-0.5">
                 {data?.player?.playerCode} • {data?.player?.sport} • {data?.player?.position}
@@ -105,10 +122,20 @@ export default function PlayerDashboardPage() {
         {elig && (
           <Card className="border-[#DCE1E3] bg-white shadow-sm">
             <CardHeader className="pb-3 border-b border-[#DCE1E3]">
-              <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
-                <Award className="h-5 w-5 text-[#101820]" />
-                <span>Professional Trial Eligibility Checklist</span>
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
+                  <Award className="h-5 w-5 text-[#101820]" />
+                  <span>Professional Trial Eligibility Checklist</span>
+                </CardTitle>
+                <RestrictionInfo
+                  category="ROLE"
+                  title="Scouting Gate Rules"
+                  reason="Scouts can only discover and contact athletes who have passed both conditions on this checklist."
+                  whoCanChange="Assigned Squad Coach"
+                  suggestedAction="Maintain attendance above 75% and ensure match appearances are officially recorded."
+                  size="xs"
+                />
+              </div>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

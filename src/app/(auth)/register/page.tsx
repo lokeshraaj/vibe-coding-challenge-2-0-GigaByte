@@ -25,7 +25,7 @@ function UnifiedRegisterContent() {
 
   const roleConfigs = {
     COACH: {
-      title: "Coach Registration",
+      title: "Coach ID Activation",
       subtitle: "Activate your account using your Academy Code and official Coach ID.",
       idLabel: "Assigned Coach ID",
       idPlaceholder: "e.g. COFO001",
@@ -33,7 +33,7 @@ function UnifiedRegisterContent() {
       redirectPath: "/coach",
     },
     PLAYER: {
-      title: "Athlete / Player Registration",
+      title: "Athlete / Player ID Activation",
       subtitle: "Activate your profile using your Academy Code and official Player ID.",
       idLabel: "Assigned Player ID",
       idPlaceholder: "e.g. PLFO001",
@@ -41,7 +41,7 @@ function UnifiedRegisterContent() {
       redirectPath: "/player",
     },
     SCOUT: {
-      title: "Talent Scout Registration",
+      title: "Talent Scout ID Activation",
       subtitle: "Activate your profile using your Academy Code and official Scout ID.",
       idLabel: "Assigned Scout ID",
       idPlaceholder: "e.g. SCFO001",

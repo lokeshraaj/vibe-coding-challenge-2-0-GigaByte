@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Clock,
   ShieldAlert,
+  AlertCircle,
 } from "lucide-react";
 
 type Step = "IDENTIFIER" | "OTP" | "RESET" | "SUCCESS";
@@ -226,14 +227,14 @@ export default function ForgotPasswordPage() {
                       <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="text"
-                        placeholder="e.g. BI0001 (Optional for Owner/Email)"
+                        placeholder="e.g. BI0001 "
                         value={academyCode}
                         onChange={(e) => setAcademyCode(e.target.value.toUpperCase())}
                         className="pl-9 font-mono uppercase tracking-wider"
                       />
                     </div>
                     <p className="text-[11px] text-muted-foreground">
-                      Required for Coaches, Players & Scouts. Academy Owners may leave this blank.
+                      Required for Coaches, Players & Scouts. 
                     </p>
                   </div>
 
@@ -317,6 +318,14 @@ export default function ForgotPasswordPage() {
                       >
                         {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"}
                       </button>
+                    </div>
+
+                    {/* Spam/Junk Folder Reminder */}
+                    <div className="rounded-lg bg-amber-50/70 border border-amber-200 p-2.5 text-xs text-amber-900 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
+                      <p className="leading-snug">
+                        Didn&apos;t receive the verification code? Please check your Spam/Junk folder before requesting a new code.
+                      </p>
                     </div>
                   </div>
                 </CardContent>

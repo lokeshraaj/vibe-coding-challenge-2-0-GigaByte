@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { DashboardShell } from "@/components/shared/dashboard-shell";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { RestrictionInfo } from "@/components/ui/feature-lock-info";
 import { Award, ShieldCheck } from "lucide-react";
 import { IEligibilityCalculation } from "@/types";
 import { toast } from "sonner";
@@ -88,10 +89,20 @@ export default function CoachEligibilityPage() {
         {/* Eligibility Table Card */}
         <Card className="border-[#DCE1E3] bg-white shadow-sm">
           <CardHeader className="pb-4 border-b border-[#DCE1E3]">
-            <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
-              <Award className="h-5 w-5 text-[#101820]" />
-              <span>Squad Evaluation Table ({calculations.length})</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2 text-[#101820]">
+                <Award className="h-5 w-5 text-[#101820]" />
+                <span>Squad Evaluation Table ({calculations.length})</span>
+              </CardTitle>
+              <RestrictionInfo
+                category="STATUS"
+                title="System-Controlled Readiness"
+                reason="Trial readiness status is mathematically computed from closed practice session attendance (>= 75%) and competitive match appearances (>= 2). Coaches cannot manually force a player to READY status."
+                whoCanChange="Automated Telemetry Engine"
+                suggestedAction="Ensure the athlete attends scheduled practice sessions and participates in official match fixtures."
+                size="xs"
+              />
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (

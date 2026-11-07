@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { RestrictionInfo } from "@/components/ui/feature-lock-info";
 import { Search, Award, ShieldCheck, UserCheck, Shield } from "lucide-react";
 import { IEligibilityCalculation } from "@/types";
 import { toast } from "sonner";
@@ -64,10 +65,20 @@ export default function ScoutDashboardPage() {
                 Talent Scout Radar
               </h1>
               {assignedCoach?.sport && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
-                  <Shield className="h-3.5 w-3.5" />
-                  {assignedCoach.sport} Discipline
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
+                    <Shield className="h-3.5 w-3.5" />
+                    {assignedCoach.sport} Discipline
+                  </span>
+                  <RestrictionInfo
+                    category="SPORT"
+                    title="Scout Sport Gate"
+                    reason={`Scout view is restricted to ${assignedCoach.sport}. Athletes from other sports are excluded from this radar.`}
+                    whoCanChange="Academy Administrator or Super Admin"
+                    suggestedAction="Contact academy management if you require scouting clearance for other disciplines."
+                    size="xs"
+                  />
+                </div>
               )}
             </div>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
@@ -132,6 +143,14 @@ export default function ScoutDashboardPage() {
             <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#C6F432] text-[#101820] px-2 py-0.5 rounded border border-[#101820]">
               Sport-Locked
             </span>
+            <RestrictionInfo
+              category="ROLE"
+              title="Scout Visibility Restricted"
+              reason="By system rules, scouts can only view trial-ready athletes (>= 75% attendance and >= 2 matches). Developing athletes are hidden."
+              whoCanChange="Assigned Squad Coach (via Training Sessions)"
+              suggestedAction="Developing prospects will unlock on your radar once their coach records qualifying attendance and match appearances."
+              size="xs"
+            />
           </div>
         </div>
 

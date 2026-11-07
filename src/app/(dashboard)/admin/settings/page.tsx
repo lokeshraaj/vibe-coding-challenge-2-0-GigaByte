@@ -5,6 +5,7 @@ import { DashboardShell } from "@/components/shared/dashboard-shell";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RestrictionInfo } from "@/components/ui/feature-lock-info";
 import {
   Settings,
   Trophy,
@@ -161,9 +162,19 @@ export default function PlatformSettingsPage() {
         {/* Section 1: Registration Gates */}
         <Card className="border-[#DCE1E3] bg-white shadow-sm">
           <CardHeader className="border-b border-[#DCE1E3] pb-3">
-            <CardTitle className="text-xs font-bold uppercase text-[#101820]">
-              Registration & Onboarding Availability
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xs font-bold uppercase text-[#101820]">
+                Registration & Onboarding Availability
+              </CardTitle>
+              <RestrictionInfo
+                category="ROLE"
+                title="Global Registration Policy"
+                reason="Platform-level policy toggles. Disabling these switches will immediately close registrations for all users across every academy tenant."
+                whoCanChange="Super Administrator"
+                suggestedAction="Leave enabled unless conducting scheduled maintenance or closed beta testing."
+                size="xs"
+              />
+            </div>
           </CardHeader>
           <CardContent className="p-6 space-y-4 text-xs">
             <div className="flex items-center justify-between p-3 bg-[#F4F3EE]/50 rounded border border-[#DCE1E3]">

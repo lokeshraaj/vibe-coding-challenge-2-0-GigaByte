@@ -6,6 +6,7 @@ import { DashboardShell } from "@/components/shared/dashboard-shell";
 import { MetricCard } from "@/components/shared/metric-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { RestrictionInfo } from "@/components/ui/feature-lock-info";
 import {
   Building2,
   Users,
@@ -136,7 +137,15 @@ export default function PlatformAdminDashboard() {
           <div>
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-[#C6F432]/30 border border-[#C6F432] text-[#101820] text-[10px] font-black uppercase tracking-widest mb-2">
               <ShieldAlert className="h-3 w-3" />
-              Platform Super Admin Authority
+              <span>Platform Super Admin Authority</span>
+              <RestrictionInfo
+                category="ROLE"
+                title="Super Administrator Scope"
+                reason="Global administrative authority active. You have full multi-tenant visibility and management across all registered academies and accounts."
+                whoCanChange="Platform Root Security"
+                suggestedAction="Use settings and security panels for global configuration changes."
+                size="xs"
+              />
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight uppercase text-[#101820]">
               Platform Super Admin HQ

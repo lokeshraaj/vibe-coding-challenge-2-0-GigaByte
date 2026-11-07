@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { FeatureLockInfo } from "@/components/ui/feature-lock-info";
 import {
   CalendarCheck,
   Plus,
@@ -264,10 +265,20 @@ export default function CoachSessionsPage() {
                 Practice Sessions & Attendance
               </h1>
               {assignedSport && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
-                  <Shield className="h-3.5 w-3.5" />
-                  {assignedSport}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
+                    <Shield className="h-3.5 w-3.5" />
+                    {assignedSport}
+                  </span>
+                  <FeatureLockInfo
+                    category="SPORT"
+                    title="Sport Discipline Locked"
+                    reason={`Your coaching account is locked to ${assignedSport}. Sessions and rosters reflect this sport.`}
+                    whoCanChange="Academy Administrator or Super Admin"
+                    suggestedAction="Contact your administrator if your coaching discipline needs reassignment."
+                    size="xs"
+                  />
+                </div>
               )}
             </div>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
@@ -364,9 +375,19 @@ export default function CoachSessionsPage() {
                     </div>
 
                     {isClosed ? (
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F4F3EE] text-xs font-bold text-[#101820] border border-[#DCE1E3]">
-                        <Lock className="h-3.5 w-3.5 text-[#101820]" />
-                        <span>Attendance Locked</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F4F3EE] text-xs font-bold text-[#101820] border border-[#DCE1E3]">
+                          <Lock className="h-3.5 w-3.5 text-[#101820]" />
+                          <span>Attendance Locked</span>
+                        </div>
+                        <FeatureLockInfo
+                          category="LOCKED"
+                          title="Attendance Records Immutable"
+                          reason="This session is closed. In accordance with competition audit integrity, roster attendance cannot be altered once locked."
+                          whoCanChange="Immutable System Audit Rule"
+                          suggestedAction="Create a new practice session for subsequent training days."
+                          size="xs"
+                        />
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
@@ -469,16 +490,26 @@ export default function CoachSessionsPage() {
                         Save Attendance Draft
                       </Button>
 
-                      <Button
-                        variant="athletic"
-                        size="sm"
-                        onClick={handleCloseSession}
-                        isLoading={closingSession}
-                        className="w-full sm:w-auto gap-2 font-bold shadow-sm"
-                      >
-                        <Lock className="h-4 w-4" />
-                        <span>Lock & Close Session</span>
-                      </Button>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <FeatureLockInfo
+                          category="PREREQUISITE"
+                          title="Session Closure Rules"
+                          reason="Closing locks attendance irrevocably and certifies attendees for upcoming match fixtures and trial readiness."
+                          whoCanChange="Assigned Squad Coach"
+                          suggestedAction="Verify and mark each player as Present or Absent before locking."
+                          size="sm"
+                        />
+                        <Button
+                          variant="athletic"
+                          size="sm"
+                          onClick={handleCloseSession}
+                          isLoading={closingSession}
+                          className="w-full sm:w-auto gap-2 font-bold shadow-sm"
+                        >
+                          <Lock className="h-4 w-4" />
+                          <span>Lock & Close Session</span>
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -519,9 +550,17 @@ export default function CoachSessionsPage() {
                 />
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
-                    Sport Discipline (Locked to Assigned Sport)
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
+                      Sport Discipline (Locked to Assigned Sport)
+                    </label>
+                    <FeatureLockInfo
+                      category="SPORT"
+                      title="Discipline Locked"
+                      reason="You can only conduct practice sessions for your assigned coaching sport."
+                      size="xs"
+                    />
+                  </div>
                   <div className="flex h-11 w-full items-center justify-between rounded-md border border-[#DCE1E3] bg-[#F4F3EE] px-3 text-sm font-bold text-[#101820]">
                     <span className="flex items-center gap-2">
                       <Lock className="h-4 w-4 text-[#101820]" />

@@ -114,10 +114,6 @@ export default function HomePage() {
         <section id="features" className="py-20 lg:py-28 border-b border-[#DCE1E3]">
           <div className="container mx-auto px-4 sm:px-8 space-y-14">
             <div className="text-center max-w-2xl mx-auto space-y-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#DCE1E3] text-[11px] font-bold uppercase tracking-wider text-[#202A32]">
-                <Sparkles className="h-3.5 w-3.5 text-[#101820]" />
-                <span>Architecture & Features</span>
-              </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#101820] uppercase">
                 Engineered For Sports Academies
               </h2>

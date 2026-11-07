@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { FeatureLockInfo } from "@/components/ui/feature-lock-info";
 import { Users, Plus, X, Copy, Mail, Check, Lock, Shield } from "lucide-react";
 import { toast } from "sonner";
 
@@ -169,10 +170,20 @@ export default function CoachPlayersPage() {
                 Assigned Squad Roster
               </h1>
               {assignedSport && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
-                  <Shield className="h-3.5 w-3.5" />
-                  {assignedSport}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] uppercase tracking-wider">
+                    <Shield className="h-3.5 w-3.5" />
+                    {assignedSport}
+                  </span>
+                  <FeatureLockInfo
+                    category="SPORT"
+                    title="Sport Discipline Locked"
+                    reason={`Your coaching roster is restricted to ${assignedSport}. All enrolled players are registered in this discipline.`}
+                    whoCanChange="Academy Administrator or Super Admin"
+                    suggestedAction="Contact your administrator if you need to coach multiple disciplines."
+                    size="xs"
+                  />
+                </div>
               )}
             </div>
             <p className="text-xs text-[#8B969E] uppercase tracking-wider mt-1 font-semibold">
@@ -381,9 +392,19 @@ export default function CoachPlayersPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
-                      Sport Discipline
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#8B969E]">
+                        Sport Discipline
+                      </label>
+                      <FeatureLockInfo
+                        category="SPORT"
+                        title="Discipline Enforced"
+                        reason="Athletes will be automatically enrolled in your assigned sport discipline."
+                        whoCanChange="Academy Administrator"
+                        suggestedAction="Athletes automatically inherit your assigned coaching sport."
+                        size="xs"
+                      />
+                    </div>
                     <div className="flex h-11 w-full items-center justify-between rounded-md border border-[#DCE1E3] bg-[#F4F3EE] px-3 text-sm font-bold text-[#101820]">
                       <span className="flex items-center gap-2">
                         <Lock className="h-4 w-4 text-[#101820]" />
@@ -416,7 +437,17 @@ export default function CoachPlayersPage() {
                   Athlix ID will be generated atomically upon enrolment and locked permanently to {assignedSport || formData.sport}. An automated email with identification credentials will be dispatched if an email address is provided.
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#DCE1E3]">
+                  {!isPhoneValid && (
+                    <FeatureLockInfo
+                      category="DATA"
+                      title="Invalid Phone Number"
+                      reason="The contact phone number is invalid. Enter a valid national or international telephone number to enable enrollment."
+                      whoCanChange="Form Author"
+                      suggestedAction="Enter a valid phone number with the appropriate country calling code."
+                      size="sm"
+                    />
+                  )}
                   <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
                     Cancel
                   </Button>
