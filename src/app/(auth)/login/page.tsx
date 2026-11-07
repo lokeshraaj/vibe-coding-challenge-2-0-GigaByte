@@ -79,7 +79,19 @@ function LoginForm() {
         body: JSON.stringify({ idToken }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type");
+      let data: any = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.status === 500
+            ? "Server error (500). Please check Firebase Admin configuration on the server."
+            : `Authentication error (${res.status}): ${text.slice(0, 100)}`
+        );
+      }
+
       if (!res.ok) {
         throw new Error(data.error || "Google authentication failed");
       }

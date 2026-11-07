@@ -3,6 +3,9 @@ import { authenticateWithGoogle } from "@/modules/authentication/google-auth-ser
 import { setAuthCookie } from "@/lib/auth/cookies";
 import { handleApiError } from "@/lib/errors";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
