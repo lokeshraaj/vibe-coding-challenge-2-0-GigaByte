@@ -31,27 +31,27 @@ export default function HomePage() {
                   <span>Multi-Tenant Sports Academy Platform</span>
                 </div>
 
-                <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight uppercase leading-[1.05] text-[#101820]">
+                <h1 className="text-3xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight uppercase leading-[1.08] text-[#101820] break-words">
                   DEVELOP ATHLETES. <br />
                   <span className="text-[#101820]">DISCOVER CHAMPIONS.</span>
                 </h1>
 
-                <p className="text-base sm:text-lg text-[#8B969E] max-w-xl font-normal leading-relaxed">
+                <p className="text-sm sm:text-base lg:text-lg text-[#8B969E] max-w-xl font-normal leading-relaxed">
                   One platform to manage your sports academy, track athlete development, measure performance and connect emerging talent with scouts.
                 </p>
 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
-                  <Link href="/register-academy">
-                    <Button variant="athletic" size="lg" className="w-full sm:w-auto text-sm font-bold gap-2 shadow-sm">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-2">
+                  <Link href="/register-academy" className="w-full sm:w-auto">
+                    <Button variant="athletic" size="lg" className="w-full sm:w-auto text-sm font-bold gap-2 shadow-sm min-h-[44px]">
                       <span>Launch Your Academy</span>
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
-                  <Link href="/login">
+                  <Link href="/login" className="w-full sm:w-auto">
                     <Button
                       variant="outline"
                       size="lg"
-                      className="w-full sm:w-auto text-sm font-semibold border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE]"
+                      className="w-full sm:w-auto text-sm font-semibold border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE] min-h-[44px]"
                     >
                       Sign In To Dashboard
                     </Button>
@@ -59,22 +59,22 @@ export default function HomePage() {
                 </div>
 
                 {/* Key Invariant Highlights */}
-                <div className="pt-8 grid grid-cols-3 gap-6 border-t border-[#DCE1E3]">
+                <div className="pt-6 sm:pt-8 grid grid-cols-3 gap-2 sm:gap-6 border-t border-[#DCE1E3]">
                   <div>
-                    <div className="text-2xl sm:text-3xl font-extrabold text-[#101820] tracking-tight">100%</div>
-                    <div className="text-[11px] font-medium uppercase tracking-wider text-[#8B969E] mt-0.5">
+                    <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#101820] tracking-tight">100%</div>
+                    <div className="text-[9px] sm:text-[11px] font-medium uppercase tracking-wider text-[#8B969E] mt-0.5">
                       Data Isolation
                     </div>
                   </div>
                   <div>
-                    <div className="text-2xl sm:text-3xl font-extrabold text-[#101820] tracking-tight">&ge; 75%</div>
-                    <div className="text-[11px] font-medium uppercase tracking-wider text-[#8B969E] mt-0.5">
+                    <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#101820] tracking-tight">&ge; 75%</div>
+                    <div className="text-[9px] sm:text-[11px] font-medium uppercase tracking-wider text-[#8B969E] mt-0.5">
                       Attendance Gate
                     </div>
                   </div>
                   <div>
-                    <div className="text-2xl sm:text-3xl font-extrabold text-[#101820] tracking-tight">&ge; 2</div>
-                    <div className="text-[11px] font-medium uppercase tracking-wider text-[#8B969E] mt-0.5">
+                    <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#101820] tracking-tight">&ge; 2</div>
+                    <div className="text-[9px] sm:text-[11px] font-medium uppercase tracking-wider text-[#8B969E] mt-0.5">
                       Verified Matches
                     </div>
                   </div>

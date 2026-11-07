@@ -132,12 +132,12 @@ export function MatchDetailsModal({ matchId, isOpen, onClose }: MatchDetailsModa
       role="dialog"
       aria-modal="true"
       aria-labelledby="match-details-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-3xl rounded-2xl border border-[#DCE1E3] bg-white shadow-2xl overflow-hidden my-8 max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-3xl rounded-2xl border border-[#DCE1E3] bg-white shadow-2xl overflow-hidden my-4 sm:my-8 max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#DCE1E3] bg-[#F4F3EE]/80 sticky top-0 z-10">
           <div className="flex items-center gap-3">
@@ -325,7 +325,7 @@ export function MatchDetailsModal({ matchId, isOpen, onClose }: MatchDetailsModa
                 {participants.length > 0 ? (
                   <div className="rounded-xl border border-[#DCE1E3] overflow-hidden bg-white shadow-xs">
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
+                      <table className="w-full text-left text-xs min-w-[620px]">
                         <thead className="bg-[#F4F3EE] text-[#8B969E] uppercase tracking-wider text-[10px] font-bold border-b border-[#DCE1E3]">
                           <tr>
                             <th className="p-3">Athlete</th>

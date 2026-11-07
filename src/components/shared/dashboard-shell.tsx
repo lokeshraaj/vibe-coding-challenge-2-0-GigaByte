@@ -30,6 +30,7 @@ export function DashboardShell({ children, allowedRoles }: DashboardShellProps) 
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -94,15 +95,23 @@ export function DashboardShell({ children, allowedRoles }: DashboardShellProps) 
 
   return (
     <div className="flex min-h-screen bg-[#F4F3EE] text-[#101820]">
-      <DashboardSidebar role={user.role} academyName={user.academy?.name} />
-      <div className="flex flex-1 flex-col overflow-x-hidden">
+      {/* Desktop Sidebar & Mobile Responsive Slide-Out Drawer */}
+      <DashboardSidebar
+        role={user.role}
+        academyName={user.academy?.name}
+        mobileMenuOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
+      />
+
+      <div className="flex flex-1 flex-col min-w-0 overflow-x-hidden">
         <DashboardHeader
           userName={user.name}
           userEmail={user.email}
           userRole={user.role}
           academyName={user.academy?.name}
+          onMenuToggle={() => setMobileMenuOpen((prev) => !prev)}
         />
-        <main className="flex-1 p-4 sm:p-8 overflow-y-auto">{children}</main>
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

@@ -72,7 +72,18 @@ export default function ForgotPasswordPage() {
         }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type");
+      let data: any = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.status >= 500
+            ? "Server error (500). Please check server logs."
+            : `Request error (${res.status}): ${text.slice(0, 100)}`
+        );
+      }
       if (!res.ok) {
         throw new Error(data.error || "Failed to initiate password reset.");
       }
@@ -102,7 +113,18 @@ export default function ForgotPasswordPage() {
           identifier: identifier.trim(),
         }),
       });
-      const data = await res.json();
+      const contentType = res.headers.get("content-type");
+      let data: any = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.status >= 500
+            ? "Server error (500). Please check server logs."
+            : `Request error (${res.status}): ${text.slice(0, 100)}`
+        );
+      }
       if (!res.ok) throw new Error(data.error || "Failed to resend code.");
 
       setChallengeId(data.challengeId);
@@ -134,7 +156,18 @@ export default function ForgotPasswordPage() {
         }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type");
+      let data: any = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.status >= 500
+            ? "Server error (500). Please check server logs."
+            : `Request error (${res.status}): ${text.slice(0, 100)}`
+        );
+      }
       if (!res.ok) {
         throw new Error(data.error || "Verification failed. Invalid or expired code.");
       }
@@ -178,7 +211,18 @@ export default function ForgotPasswordPage() {
         }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type");
+      let data: any = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.status >= 500
+            ? "Server error (500). Please check server logs."
+            : `Request error (${res.status}): ${text.slice(0, 100)}`
+        );
+      }
       if (!res.ok) {
         throw new Error(data.error || "Failed to reset password.");
       }

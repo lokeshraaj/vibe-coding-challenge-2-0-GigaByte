@@ -28,7 +28,18 @@ function LoginForm() {
       try {
         const res = await fetch("/api/auth/me");
         if (res.ok) {
-          const data = await res.json();
+          const contentType = res.headers.get("content-type");
+      let data: any = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.status >= 500
+            ? "Server error (500). Please check server logs."
+            : `Authentication error (${res.status}): ${text.slice(0, 100)}`
+        );
+      }
           if (data?.user) {
             const role = data.user.role;
             if (role === "PLATFORM_ADMIN" || role === "SUPER_ADMIN") router.push("/admin");
@@ -146,7 +157,18 @@ function LoginForm() {
         }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type");
+      let data: any = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.status >= 500
+            ? "Server error (500). Please check server logs."
+            : `Authentication error (${res.status}): ${text.slice(0, 100)}`
+        );
+      }
       if (!res.ok) {
         throw new Error(data.error || "Invalid credentials");
       }

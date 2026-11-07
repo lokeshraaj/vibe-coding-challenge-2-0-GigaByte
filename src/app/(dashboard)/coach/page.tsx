@@ -57,13 +57,13 @@ export default function CoachDashboardPage() {
     <DashboardShell allowedRoles={["COACH"]}>
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight uppercase text-[#101820]">
                 Coach Desk & Squad Command
               </h1>
               {stats?.assignedSport && (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#C6F432] text-[#101820] border border-[#101820] shadow-2xs uppercase tracking-wider">
                     <Shield className="h-3.5 w-3.5" />
                     {stats.assignedSport} Discipline
@@ -84,18 +84,18 @@ export default function CoachDashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link href="/coach/sessions">
-              <Button variant="athletic" size="sm" className="gap-2 font-bold shadow-sm">
+          <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+            <Link href="/coach/sessions" className="w-full sm:w-auto">
+              <Button variant="athletic" size="sm" className="w-full sm:w-auto gap-2 font-bold shadow-sm min-h-[40px]">
                 <CalendarCheck className="h-4 w-4" />
                 <span>Practice Sessions</span>
               </Button>
             </Link>
-            <Link href="/coach/matches">
+            <Link href="/coach/matches" className="w-full sm:w-auto">
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE]"
+                className="w-full sm:w-auto gap-2 border-[#DCE1E3] bg-white text-[#101820] hover:bg-[#F4F3EE] min-h-[40px]"
               >
                 <Trophy className="h-4 w-4" />
                 <span>Record Match</span>
